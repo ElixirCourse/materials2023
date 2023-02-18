@@ -25,6 +25,7 @@ footer: 'Курс по Elixir 2023, ФМИ'
 backgroundColor: #FFFFFF
 marp: true
 
+
 ---
 ## Функционално програмиране с Elixir
 
