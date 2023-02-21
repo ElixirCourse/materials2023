@@ -25,10 +25,11 @@ style: |
     margin-bottom: 128px;
   }
 paginate: true
-footer: 'Курс по Elixir 2023, ФМИ'
+# The footer collides with many of the slides and images
+# footer: 'Курс по Elixir 2023, ФМИ'
+
 backgroundColor: #FFFFFF
 marp: true
-
 
 ---
 
@@ -292,6 +293,10 @@ iex(7)> 5 = b
 
 ---
 
+<img src="assets/two_million_websocket_connections.png" alt="" width="80%" />
+
+---
+
 ```elixir
 n = 100
 k = 1000
@@ -381,6 +386,34 @@ end)
 ## Метапрограмиране
 
 ![Image-Absolute](assets/macro_def.png)
+
+---
+
+```elixir
+{:ok, str} = File.read(file)
+{:ok, ast} = Code.string_to_quoted(str)
+
+{_, list_of_functions} =
+  ast
+  |> Macro.prewalk(
+    [],
+    fn
+      {:if, _, _} = ast_fragment, acc ->
+        {ast_fragment, [:if | acc]}
+
+      {:cond, _, _} = ast_fragment, acc ->
+        {ast_fragment, [:cond | acc]}
+
+      {:unless, _, _} = ast_fragment, acc ->
+        {ast_fragment, [:unless | acc]}
+
+      ast_fragment, acc ->
+        {ast_fragment, acc}
+    end
+  )
+
+list_of_functions |> Enum.count() 
+```
 
 ---
 
