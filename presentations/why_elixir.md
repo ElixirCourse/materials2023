@@ -40,6 +40,11 @@ marp: true
 
 ---
 
+## Малко информация за курса
+![Image-Absolute](assets/Craft-Beer.jpeg)
+
+---
+
 ## Кои сме ние?
 
 * Ние ползваме Elixir в свободното си време.
@@ -465,8 +470,6 @@ list_of_functions |> Enum.count()
 
 ---
 
-## Настоящето и бъдещето
-
 ![Image-Absolute](assets/present_and_future.png)
 
 ---
@@ -557,11 +560,6 @@ list_of_functions |> Enum.count()
 
 ---
 
-## Малко информация за курса
-![Image-Absolute](assets/Craft-Beer.jpeg)
-
-
----
-
 ## Край
+
 ![Image-Absolute](assets/gimpy.jpg)
