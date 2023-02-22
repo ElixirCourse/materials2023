@@ -83,7 +83,10 @@ marp: true
 * **Сайт**: https://elixir-lang.bg
 * **Презентации**: https://slides.elixir-lang.bg
 * **Discord**: https://discord.gg/VvzJruw5PM
+* **Фейсбук**: https://www.facebook.com/groups/636900123169076/
+* **Github**: https://github.com/ElixirCourse
 * **Moodle**: [Линк](https://learn.fmi.uni-sofia.bg/course/view.php?id=9236)
+* **ElixirJobs**: https://elixirjobs.net/ (не е свързан с нас)
 
 ---
 
