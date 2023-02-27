@@ -234,8 +234,8 @@ end
 
 ### Параметри със стойности по подразбиране
 
-* дефинират се с `\\`
-* = се използва за съпоставяне (pattern matching), затова е нужен друг синтаксис
+- дефинират се с `\\`
+- = се използва за съпоставяне (pattern matching), затова е нужен друг синтаксис
 
 ```elixir
 defmodule Example do
@@ -534,8 +534,8 @@ end
 * Meddle има два хубави поста по въпроса: [1](https://themeddle.com/posts/y) и [2](https://themeddle.com/posts/functions_all_the_way)
 * за разлика от Erlang, анонимните функции в Elixir не са fun.
 * дефинират се с `fn -> end`
-* всъщност са и closure-и, т.е можем да използваме променливи от външни
-    скоупове в тях.
+* всъщност са и closure-и, т.е можем да използваме променливи от
+    външната среда в тях
 
 ---
 
@@ -674,7 +674,8 @@ iex(14)> doubler.(1)
   - потърси помощ
 * mix help <command>
 * iex --erl "-kernel shell_history enabled" -S mix
-  * Препоръчваме ви във Вашия .<shell>rc файл да добавите `alias iex='iex --erl "-kernel shell_history enabled"'`
+  - Препоръчваме ви във Вашия .<shell>rc файл да добавите `alias iex='iex --erl "-kernel shell_history enabled"'`
+
 
 ---
 
