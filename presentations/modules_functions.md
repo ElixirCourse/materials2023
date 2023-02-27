@@ -186,8 +186,12 @@ iex(2)> String.split(
 ### do..end блокове с малко код
 
 ```elixir
+# Кратък синтаксис за one-liners
 def double(n), do: n * 2
-```
+# do..end синтаксис, позволява много редове код
+def again_double(n) do
+  n * 2
+end
 
 ---
 
