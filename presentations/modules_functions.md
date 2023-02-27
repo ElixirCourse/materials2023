@@ -36,7 +36,7 @@ marp: true
 ## Функционално програмиране с Elixir
 
 ---
-![Image-Absolute](assets/bulgaria_elixir.png)
+![Image-Absolute](assets/elixir-logo.png)
 
 ---
 
