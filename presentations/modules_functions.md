@@ -630,6 +630,7 @@ iex(14)> doubler.(1)
   - потърси помощ
 * mix help <command>
 * iex --erl "-kernel shell_history enabled" -S mix
+  * Препоръчваме ви във Вашия .<shell>rc файл да добавите `alias iex='iex --erl "-kernel shell_history enabled"'`
 
 ---
 
