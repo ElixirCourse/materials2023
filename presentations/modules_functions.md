@@ -33,7 +33,7 @@ marp: true
 
 
 ---
-## Функционално програмиране с Elixir
+## Модули, функции и Mix
 
 ---
 ![Image-Absolute](assets/elixir-logo.png)
