@@ -178,7 +178,7 @@ iex(1)> String.split("Elixir is awesome. It totally kicks bum.")
 
 iex(2)> String.split(
   "Foo Bar Baz",
-  ".",
+  " ",
   parts: 2)
 ["Foo", "Bar Baz"]
 ```
@@ -395,7 +395,7 @@ end
 ```elixir
 # Using except:
 defmodule RationalNumbers do
-  import Kernel, except: [abs: 2]
+  import Kernel, except: [abs: 1]
 
   def abs({n, d}), do: {Kernel.abs(n), Kernel.abs(d)}
 end
