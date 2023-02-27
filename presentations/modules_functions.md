@@ -42,7 +42,7 @@ marp: true
 
 ## Въпроси
 
-* инсталирахте ли си Elixir?
+* инсталирахте ли си Elixir & Erlang?
     - препоръчвам инструмента asdf
 * отворихте ли elixir-lang.{org, bg}?
 * присъединихте ли се във {Facebook, Discord}?
@@ -53,10 +53,10 @@ marp: true
 ## Малко предговор
 
 * Elixir се компилира до:
-    a) JavaScript
-    b) Java
-    c) Erlang
-    d) Machine Code
+  a) JavaScript
+  b) Java
+  c) Erlang
+  d) Machine Code
 
 ---
 
@@ -91,6 +91,7 @@ end
 ### Компилиране
 
 * като използваме `elixirc times.ex`
+    - може да ползваме и `iex times.ex` за удобство
 * ще генерира файл на име `Elixir.Times.beam`, който съдържа байткода
 * `iex` автоматично ще зареди всякакви `*.beam` файлове, ако са в същата директория
 * никога няма да го правим по този начин
@@ -176,10 +177,10 @@ iex(1)> String.split("Elixir is awesome. It totally kicks bum.")
 ["Elixir", "is", "awesome.", "It", "totally", "kicks", "bum."]
 
 iex(2)> String.split(
-  "Elixir is awesome. It totally kicks bum.",
+  "Foo Bar Baz",
   ".",
   parts: 2)
-["Elixir is awesome", " It totally kicks bum."]
+["Foo", "Bar Baz"]
 ```
 
 ---
@@ -193,6 +194,7 @@ def double(n), do: n * 2
 def again_double(n) do
   n * 2
 end
+```
 
 ---
 
@@ -351,13 +353,12 @@ end
 
 ### import
 
-* Позволяват ни да викаме всички функции на чужд модул без да ги префиксваме с името на модула.
+* позволяват ни да викаме всички функции на чужд модул без да ги префиксваме с името на модула.
 * с други думи не е нужно да използваме пълното име на функцията
-* only
-* except
+* only - импортира само даден списък от функции
+* except - импортира всички функции освен дадени в списъка
 * `:macros/:functions`
 * може да импортираме в тялото на функция
-* не се ползва толкова често
 
 ---
 ```elixir
@@ -371,6 +372,32 @@ defmodule CsvUtils do
     |> Enum.map(&strip/1)
     |> Enum.join(" ")
   end
+end
+```
+
+---
+```elixir
+# Using only:
+defmodule CsvUtils do
+  import String, only: [upcase: 1, split: 2, strip: 1]
+
+  def upcase_space_transform(csv_line) do
+    csv_line
+    |> upcase
+    |> split(",")
+    |> Enum.map(&strip/1)
+    |> Enum.join(" ")
+  end
+end
+```
+
+---
+```elixir
+# Using except:
+defmodule RationalNumbers do
+  import Kernel, except: [abs: 2]
+
+  def abs({n, d}), do: {Kernel.abs(n), Kernel.abs(d)}
 end
 ```
 
@@ -401,10 +428,10 @@ end
 
 ### alias
 
-* Дава алтернативно име на модул, за да го използваме по-удобно.
-* Указваме новото име с `as: <name>` - `alias Some.Other.Module, as: M`
-* Ако не укажем `as:`, то частта от името след последната точка се използва
-* ерлангски модули
+* дава алтернативно име на модул, за да го използваме по-удобно.
+* указваме новото име с `as: <name>` - `alias Some.Other.Module, as: M`
+* ако не укажем `as:`, то частта от името след последната точка се използва
+* можем да преименуваме ерлангски модули: `alias :rand, as: Random`
 * {синтаксис}
 
 ---
@@ -507,6 +534,8 @@ end
 * Meddle има два хубави поста по въпроса: [1](https://themeddle.com/posts/y) и [2](https://themeddle.com/posts/functions_all_the_way)
 * за разлика от Erlang, анонимните функции в Elixir не са fun.
 * дефинират се с `fn -> end`
+* всъщност са и closure-и, т.е можем да използваме променливи от външни
+    скоупове в тях.
 
 ---
 
@@ -515,6 +544,20 @@ end
 ```
 iex(7)> fn a, b -> a + b end.(3, 4)
 7
+```
+
+---
+
+#### Пример
+
+```
+iex(6)> var = 7
+iex(7)> summer = fn a -> a + var end
+iex(8)> summer.(3)
+10
+iex(9)> var = 8
+iex(9)> summer.(3)
+10
 ```
 
 ---
@@ -549,7 +592,7 @@ iex(10)> Kernel.bit_size(res)
 
 ### Залавяне на функции
 
-* Function capturing
+* function capturing
 * става с така наречения "capture operator"
 * &пълно-име-на-функция/арност
 * може да прихващаме импортирани функции
@@ -641,9 +684,9 @@ iex(14)> doubler.(1)
 * при генериране на микс проект идва с `test_helper.exs` файл
 * конвенцията е за всеки файл в `lib/<my_module>.ex` е да дефинираме един
     тест файл в `test/<my_module>_test.exs`
-* Използват `.exs` разширението
-* За да пишем тестове трябва да използваме `use ExUnit.Case`
-* Дефинираме различни тестовете с макрото `test`
+* използват `.exs` разширението
+* за да пишем тестове трябва да използваме `use ExUnit.Case`
+* дефинираме различни тестовете с макрото `test`
 * mix test автоматично ще стартира
 
 ---
