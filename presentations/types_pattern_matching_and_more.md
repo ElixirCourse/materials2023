@@ -318,6 +318,7 @@ Map.get(pesho, :name)
 
 ---
 ### Бинарен тип (Binaries)
+
 ```elixir
 << 2 >> # Цялото число 2 в 1 байт
 byte_size << 2 >>
