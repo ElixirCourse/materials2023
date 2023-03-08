@@ -398,6 +398,36 @@ BPM.binary_to_list("Let's there be list!")
 ```
 
 ---
+### Динамично съпоставяне
+
+- Можем да реферираме стойности, които вече сме съпоставили.
+
+```elixir
+str = String.duplicate("a", 56)              
+# "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+size = byte_size(str)                            
+# 56
+size_value_bin = <<size::32, str::binary>>               
+# <<0, 0, 0, 56, 97, 97, 97, ...>>
+<<
+  payload_size::32,
+  payload::binary-size(payload_size)
+>> = size_value_bin
+# <<0, 0, 0, 56, 97, 97, 97, ...>>
+payload_size
+# 56
+payload
+# "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+```
+
+---
+### Интересен пример
+
+* Erlang е създаден за решаване на проблеми в телеком индустрията
+* Поради това, Erlang е особено подходящ за имплементация на binary протоколи
+* В [тази поредица от блогпостве](http://blog.plataformatec.com.br/2018/11/building-a-new-mysql-adapter-for-ecto-part-i-hello-world/) може да видите какви са стъпките при имплементация на *MySQL* протокола в *Elixir*.
+
+---
 ## Низове
 
 ![Image-Absolute](assets/strings.jpg)
