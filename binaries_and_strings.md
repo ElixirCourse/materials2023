@@ -1,6 +1,5 @@
 ---
 theme: uncover
-hidden: true
 style: |
   .small-text {
     font-size: 0.75rem;
