@@ -72,6 +72,17 @@ marp: true
 
 ---
 
+### Проблемите на конкурентността
+
+* Програмите са по-трудни за писане и поддръжка.
+  * Синхронизация, координация, планиране на изпълнението.
+* Програмите са по-трудни за дебъгване.
+* Допълнително натоварване породено от постоянната смяна на контекста.
+* Конкурентните под-задачи отнемат по-дълго време за изпълнение при натоварване.
+* Не всички програми могат да бъдат написани конкурентно.
+
+---
+
 ### Защо има нужда от конкурентност?
 
 * По-пълноценно използване на ресурсите.
@@ -79,14 +90,6 @@ marp: true
 * Позволява да изпълняваме повече задачи едновременно (според външен наблюдател) от броя налични процесорни ядра.
 * Не позволява на една или няколко задачи да монополизират ресурсите.
   
----
-
-### Проблемите на конкурентността
-
-* Програмите са по-трудни за писане и поддръжка;
-  * Синхронизация, координация, планиране на изпълнението;
-* Програмите са по-трудни за дебъгване;
-* Допълнително натоварване породено от постоянната смяна на контекста;
 
 ---
 
@@ -132,7 +135,6 @@ marp: true
 
 <div class="side_by_side">
 <img src="assets/processes/shared_memory_concurrency_model.png" width="50%" />
-
 <img  src="assets/processes/message_passing_concurrency_model.png" width="50%" />
 </div>
 
@@ -144,7 +146,34 @@ marp: true
 * Кодът, изпълняван в процеса, е последователен и функционален.
 * Ако искаме да изпълним конкурентно задача A и задача B, то трябва да ги изпълним в отделни процеси.
 * Когато един процес приключи своята работа, то той "умира". (`Process.alive?` връща `false`).
-  
+
+---
+
+### Процеси
+
+* Процесът е "парче памет".
+* Достъп до данни на друг процес може да се осъществи само чрез съобщения.
+* Процесът се състои от:
+  * **Собствен** стек;
+  * **Собствен** хийп;
+  * **Собствена** пощенска кутия;
+  * **Собствен** контролен блок.
+
+---
+
+### Пълна изолация
+
+<img class="center_img" src="assets/processes/gen_mutafchiiski_1.png" width="40%" />
+
+---
+
+### Освен нещата, които са общи и/или променими
+
+- `refc binaries`, `ets`, `persistent_term`, `process dictionary`, etc.
+- Неща, предоставени от платформата, които са правилно имплементирани.
+
+<img class="center_img" src="assets/processes/gen_mutafchiiski_2.png" width="40%" />
+
 ---
 
 ![](assets/processes/process_anatomy.png)
@@ -182,9 +211,7 @@ marp: true
 spawn(fn -> IO.puts("Hello from a process #{inspect(self())}!") end)
 # => Hello from a process #PID<0.1303.0>!
 # PID<0.1303.0>
-```
 
-```elixir
 defmodule T do
   def print_sum(a, b, c) do
     IO.puts("#{a} + #{b} + #{c} = #{a + b + c}")
@@ -199,13 +226,21 @@ spawn(T, :print_sum, [1, 2, 3])
 ---
 
 ```elixir
-f = fn x -> Process.sleep(30); IO.puts(x) end
-#Function<42.3316493/1 in :erl_eval.expr/6>
-for i <- 1..20, do: spawn(fn -> f.(i) end)   
+for i <- 1..20, do: spawn(fn -> IO.puts(i) end)   
+
+# 1
+# 3
+# 4
+# 2
+# 5
+# ...  
 ```
 
 ---
 
+### Живота на един процес
+
+- Когато един процес свърши своята работа, то той бива терминиран.
 <img src="assets/processes/process_life.gif" />
 
 ---
@@ -224,23 +259,80 @@ for i <- 1..20, do: spawn(fn -> f.(i) end)
 
 ---
 
-### Комуникация между процеси
+### Selective receive
 
-* Selective receive
+* Selective receive.
+* `receive` дефинира, подобно на `case`, множество шаблони, които се съпоставят последователно.
+* Ако някой от шаблоните се съпостави, то кодът му се изпълнява и `receive` завършва.
+* Ако никой от шаблоните не се съпостави, то `receive` блокира процеса:
+  * Докато не се получи съобщение, което да се съпостави с някой от шаблоните.
+  * Докато не изтече таймаут, дефиниран с `after`.
+* Ако процесът получи съобщение, което не се съпоставя с никой от шаблоните, то съобщението се премества в структура, съдържаща видяните съобщения.
+
+---
 
 ```elixir
-defmodule Looper do
-  def loop() do
-    receive do
-      {:pattern_1, from} -> send(from, :received_pattern_1)
-      {:pattern_2, from} -> send(from, :received_pattern_2)
-      :print_info -> IO.inspect(Process.info(self(), :messages), label: "Messages")
-    end
-
-    loop()
+pid = spawn(fn ->
+  IO.puts(DateTime.utc_now())
+  receive do
+    :some_msg -> :ok
+  after 
+    5_000 -> 
+      IO.puts("#{DateTime.utc_now()} Terminating because of timeout!")
+      :timeout
   end
-end
+end)
 
+# 2023-03-08 22:30:42
+# 2023-03-08 22:30:47 Terminating because of timeout!
+```
+
+---
+
+```elixir
+pid = spawn(fn ->
+  receive do
+    {:pattern_1, from} -> send(from, :received_pattern_1)
+    {:pattern_2, from} -> send(from, :received_pattern_2)
+    :print_info -> IO.inspect(Process.info(self(), :messages), label: "Messages")
+  end
+end)
+
+send(pid, {:pattern_100, self()})
+send(pid, {:pattern_101, self()})
+send(pid, {:pattern_101, self()})
+send(pid, {:pattern_2, self()})
+
+flush()
+# :received_pattern_2
+```
+
+---
+
+```elixir
+pid = spawn(fn ->
+  receive do
+    {:pattern_1, from} -> send(from, :received_pattern_1)
+    {:pattern_2, from} -> send(from, :received_pattern_2)
+    :print_info -> IO.inspect(Process.info(self(), :messages), label: "Messages")
+  end
+end)
+
+send(pid, {:pattern_100, self()})
+send(pid, {:pattern_101, self()})
+send(pid, {:pattern_101, self()})
+send(pid, :print_info)
+# Messages: {:messages,
+#  [
+#    pattern_100: #PID<0.111.0>,
+#    pattern_101: #PID<0.111.0>,
+#    pattern_101: #PID<0.111.0>
+#  ]}
+```
+
+---
+
+```elixir
 pid = spawn(fn ->
   receive do
     {:pattern_1, from} -> send(from, :received_pattern_1)
@@ -252,15 +344,20 @@ end)
 send(pid, {:pattern_100, self()})
 send(pid, {:pattern_101, self()})
 send(pid, {:pattern_2, self()})
+send(pid, :print_info)
+# ????
+```
+* Нищо не се случва, защото процесът е терминиран.
 
-flush()
-# :received_pattern_2
 ---
 
 ### Имаш поща
 
-* Пощенската кутия на процес структура, която съдържа получените съобщения.
-* Когато процес изпраща съобщение, то той **копира** данните в пощенската кутия на другия процес.
+![bg right:30%](assets/processes/mailbox.png)
+
+* Пощенската кутия на процес е структура, която съдържа получените съобщения.
+* Когато процес изпраща съобщение, то той **копира** данните от своя хийп в пощенската кутия на другия процес.
+* Имплементация: [The Beam Book](https://blog.stenmans.org/theBeamBook/#_mailboxes_and_message_passing)
 
 ---
 
@@ -271,6 +368,18 @@ flush()
   * Парче памет извън хийпът, където други процеси могат да пишат безопасно.
   * Когато цялото съобщение е копирано, съобщението в `m-buf` се свръзва се добавя в края на пощенската кутия.
   * Използва се когато lock-ът на пощенската кутия е взет от друг.
+
+---
+
+### Изпращане на съобщение
+
+![bg 100% left:30%](assets/processes/sending_message_internals.png)
+
+* Пресмята размера на Msg.
+* Алокира място за съобщението (в хийпа на P2 или в `m-buf`).
+* Копира съобщението от хийпа на P2 в алокираното място.
+* Алокира и свързва структура ErlMessage, обвиваща съобщението.
+* Свързва на ErlMessage с пощенската кутия.
 
 ---
 
@@ -297,6 +406,7 @@ send(printer_pid, {:print, "1+2 = 3"})
 #=> 1+2 = 3
 # {:print, "1+2 = 3"})
 ```
+
 ---
 
 ```elixir
@@ -305,7 +415,7 @@ spawn(fn -> :ok = fun.() end)
 spawn(fn -> 1 / 0 end)
 spawn(fn -> raise "error" end)
 spawn(fn -> throw 10 end)
-spawn(fn -> exit(normal) end)
+spawn(fn -> exit(:normal) end)
 ```
 
 ---
@@ -313,11 +423,16 @@ spawn(fn -> exit(normal) end)
 ### Връзки между процеси - link
 
 * `link` - специална двупосочна връзка между два процеса.
-* Когато единият процес приключи своята работа "неочаквано“, то другият процес получава съобщение `{:EXIT, from, reason}`.
-  * Неочаквано: Когато процесът терминира чрез `exit`, `throw` или `raise`.
+* Когато единият процес приключи своята работа неочаквано, то другият процес получава съобщение `{:EXIT, from, reason}`.
+  * Неочаквано: Когато процесът терминира чрез `exit`, `throw` или `raise`
+  * `MatchError`, `FunctionClauseError`, ръчно извикване на `exit`/`throw`.
 * Свързване на един процес с друг става:
   * по време на създаването му чрез `spawn_link/{1,3}`;
   * след създаването му чрез `Process.link/1` (свързва текущия процес с друг процес).
+
+---
+
+![](assets/processes/link_exit.png)
 
 ---
 
@@ -326,17 +441,6 @@ spawn(fn -> exit(normal) end)
 * `monitor` - специална еднопосочна връзка между два процеса - единият процес наблюдава другия (stalker).
 * Когато наблюдаваният процес терминира, наблюдаващият го получава съобщение
 * Дори когато наблюдаваният процес терминира нормално, наблюдаващият го получава съобщение.
-
-![](assets/processes/link_exit.png)
-
----
-
-![](assets/processes/processes_sum_first_n.png)
-
----
-
-![](assets/processes/beam_schedulers_os_strucutre.png)
-
 
 ---
 
@@ -406,6 +510,12 @@ pid = spawn(Counter, :loop, [0])
 IO.puts(Counter.get_next(pid))
 IO.puts(Counter.get_next(pid))
 ```
+
+---
+
+### Демо
+
+![bg 70%](assets/processes/processes_sum_first_n.png)
 
 ---
 
