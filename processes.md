@@ -210,7 +210,7 @@ for i <- 1..20, do: spawn(fn -> f.(i) end)
 
 ---
 
-### Комуникация между процеси - I
+### Комуникация между процеси
 
 * Процесите изпращат съобщения: `send/2`
 * Процесите получават съобщения: `receive/1`
@@ -224,9 +224,42 @@ for i <- 1..20, do: spawn(fn -> f.(i) end)
 
 ---
 
+### Комуникация между процеси
+
+* Selective receive
+
+```elixir
+defmodule Looper do
+  def loop() do
+    receive do
+      {:pattern_1, from} -> send(from, :received_pattern_1)
+      {:pattern_2, from} -> send(from, :received_pattern_2)
+      :print_info -> IO.inspect(Process.info(self(), :messages), label: "Messages")
+    end
+
+    loop()
+  end
+end
+
+pid = spawn(fn ->
+  receive do
+    {:pattern_1, from} -> send(from, :received_pattern_1)
+    {:pattern_2, from} -> send(from, :received_pattern_2)
+    :print_info -> IO.inspect(Process.info(self(), :messages), label: "Messages")
+  end
+end)
+
+send(pid, {:pattern_100, self()})
+send(pid, {:pattern_101, self()})
+send(pid, {:pattern_2, self()})
+
+flush()
+# :received_pattern_2
+---
+
 ### Имаш поща
 
-* Пощенската кутия на процес mutable структура, която съдържа списък от получените съобщения.
+* Пощенската кутия на процес структура, която съдържа получените съобщения.
 * Когато процес изпраща съобщение, то той **копира** данните в пощенската кутия на другия процес.
 
 ---
@@ -277,15 +310,6 @@ spawn(fn -> exit(normal) end)
 
 ---
 
-### Комуникация между процеси - II
-
-* Съобщението е специален тип **сигнал**
-* Съществуват други сигнали - 
-* `exit` - изпраща сигнал за приключване на процес
-* TODO
-
----
-
 ### Връзки между процеси - link
 
 * `link` - специална двупосочна връзка между два процеса.
@@ -327,8 +351,8 @@ spawn(fn -> exit(normal) end)
 
 ### Комуникация между процеси
 
-- **Съобщения**
-- **Сигнали**
+* **Съобщенията** са специален вид **сигнали**
+* **Сигнали**
 
 ---
 
