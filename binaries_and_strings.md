@@ -284,7 +284,7 @@ sign
 - *binary* или *bytes*
 - *integer* модификатор, който се прилага по подразбиране
 - *bits* или *bitstrig*
-- *utf8*
+- *utf-8*
 - *utf16*
 - *utf32*
 - суфикси *-little* и *-big* за избор на endianness
@@ -433,8 +433,10 @@ payload
 ![Image-Absolute](assets/strings.jpg)
 
 ---
-Низовете в Elixir използват *unicode* - предтавляват binary структури -
-поредица от *unicode codepoint*-и в *utf8* енкодинг.
+## Низове
+
+Низовете в Elixir използват *unicode* и се представят като binary -
+поредица от *unicode codepoint*-и в *UTF-8* енкодинг.
 
 ---
 ## Низове
@@ -444,7 +446,7 @@ payload
 ```
 
 - При *UTF-8* даден codepoint се състои от един до четири байта (може и в повече).
-- Първите *128* кодпойнта съвпадат с *ASCII* *codepoint*-ите.
+- Първите *128* codepoint-а съвпадат с *ASCII* *codepoint*-ите.
 - Te се пазят в един байт, който започва с *0*:
 
 ---
@@ -590,17 +592,17 @@ String.at("Искам бира!", 12)
 
 ---
 ```elixir
-<< _::binary-size(11), x::utf8, _::binary >> = "Искам бира!"
+<< _::binary-size(11), x::utf-8, _::binary >> = "Искам бира!"
 
 x
 # 1073
-<< x::utf8 >>
+<< x::utf-8 >>
 # б
 ```
 
 ---
 ```elixir
-<< "Искам ", x::utf8, _::binary >> = "Искам бира!"
+<< "Искам ", x::utf-8, _::binary >> = "Искам бира!"
 ```
 
 ---
@@ -719,12 +721,12 @@ defmodule ACounterMatch do
 
   defp count("", n), do: n
 
-  defp count(<< c::utf8, rest::binary >>, n)
+  defp count(<< c::utf-8, rest::binary >>, n)
   when c == ?a do
     count(rest, n + 1)
   end
 
-  defp count(<< _::utf8, rest::binary >>, n) do
+  defp count(<< _::utf-8, rest::binary >>, n) do
     count(rest, n)
   end
 end
