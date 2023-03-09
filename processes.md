@@ -48,6 +48,16 @@ marp: true
 
 ---
 
+### Съдържание
+
+* Дефиниции на конкурентност, паралелизъм и скалируемост. Примери.
+* Създаване на процеси.
+* Комуникация между процеси
+* Наблюдаване на процеси. Разпространение на грешките.
+* В следващата лекция: Live coding имплементация на конкурентни абстракции.
+
+---
+
 ### Дефиниции
 
 * **Конкурентност**
@@ -423,8 +433,8 @@ spawn(fn -> exit(:normal) end)
 ### Връзки между процеси - link
 
 * `link` - специална двупосочна връзка между два процеса.
-* Когато единият процес приключи своята работа неочаквано, то другият процес получава съобщение `{:EXIT, from, reason}`.
-  * Неочаквано: Когато процесът терминира чрез `exit`, `throw` или `raise`
+* Когато единият процес приключи своята работа неочаквано, то всички свързани с него процеси също терминират.
+  * Неочаквано: Когато процесът терминира чрез `exit`, `throw` или `raise`;
   * `MatchError`, `FunctionClauseError`, ръчно извикване на `exit`/`throw`.
 * Свързване на един процес с друг става:
   * по време на създаването му чрез `spawn_link/{1,3}`;
@@ -432,15 +442,76 @@ spawn(fn -> exit(:normal) end)
 
 ---
 
+```elixir
+self()
+#PID<0.111.0>
+spawn_link(fn -> raise "error" end)
+# ** (EXIT from #PID<0.111.0>) shell process exited with reason: an exception was raised:
+#     ** (RuntimeError) error
+#         iex:1: (file)
+# 
+# 18:32:45.788 [error] Process #PID<0.113.0> raised an exception
+# ** (RuntimeError) error
+#     iex:1: (file)
+```
+
+---
+
+### Връзки между процеси - link
+
+* Ако процесите са толкова изолирани, защо `link` убиваа всички свързани с него процеси?
+* По този начин не разпространяваме ли грешките, вместо да ги изолираме и обработваме?
+* Можем да превърнем грешките в инструменти!
+* `Process.flag(:trap_exit, true)`
+  * Преобразува грешките в съобщения;
+  * Изпраща съобщение, също и когато процесът приключи успешно.
+
+---
+
 ![](assets/processes/link_exit.png)
 
 ---
 
-### Връзки между процеси - monitor
+```elixir
+self()
+#PID<0.111.0>
+Process.flag(:trap_exit, true)
 
-* `monitor` - специална еднопосочна връзка между два процеса - единият процес наблюдава другия (stalker).
-* Когато наблюдаваният процес терминира, наблюдаващият го получава съобщение
-* Дори когато наблюдаваният процес терминира нормално, наблюдаващият го получава съобщение.
+spawn_link(fn -> raise "error" end)
+
+# Процес PID<0.111.0> не умира
+# 18:40:18.477 [error] Process #PID<0.115.0> raised an exception
+# ** (RuntimeError) error
+#     iex:3: (file)
+ 
+flush()
+# {:EXIT, #PID<0.115.0>,
+#  {%RuntimeError{message: "error"},
+#   [{:elixir_eval, :__FILE__, 1, [file: 'iex', line: 3]}]}}
+```
+
+---
+
+```elixir
+self()
+
+spawn_link(fn -> :ok end)
+ 
+flush()
+# Когато свързаният процес приключи успешно и нямаме trap_exit=true
+# нашият процес не получава нищо
+```
+
+---
+
+```elixir
+self()
+Process.flag(:trap_exit, true)
+spawn_link(fn -> :ok end)
+ 
+flush()
+# {:EXIT, #PID<0.554.0>, :normal}
+```
 
 ---
 
@@ -453,11 +524,50 @@ spawn(fn -> exit(:normal) end)
 
 ---
 
-### Комуникация между процеси
+### Връзки между процеси - monitor
 
-* **Съобщенията** са специален вид **сигнали**
-* **Сигнали**
+* `monitor` - специална еднопосочна връзка между два процеса - единият процес наблюдава другия (stalker).
+* Когато наблюдаваният процес терминира (успешно или неочаквано), наблюдаващият получава съобщение.
+* Няма нужа от `trap_exit`
+* `spawn_monitor` - създава процес и го наблюдава. Връща `{pid, ref}`.
+* `Process.monitor(pid)` - започва да наблюдава процес. Връща `ref`.
+* Може да имаме множество от `monitor` от един процес към друг.
 
+---
+
+```elixir
+spawn_monitor(fn -> :ok end)
+spawn_monitor(fn -> 1/0 end)
+spawn_monitor(fn -> raise("error") end)
+
+flush()
+# {:DOWN, #Reference<0.2157985570.1367343105.170114>, :process, #PID<0.732.0>,
+#  :normal}
+#
+# {:DOWN, #Reference<0.2157985570.1367343105.170219>, :process, #PID<0.734.0>,
+#  {:badarith,
+#   [
+#     {:erlang, :/, [1, 0], [error_info: %{module: :erl_erts_errors}]},
+#     {:elixir_eval, :__FILE__, 1, [file: 'iex', line: 25]}
+#   ]}}
+#
+# {:DOWN, #Reference<0.2157985570.1365508098.140719>, :process, #PID<0.736.0>,
+#  {%RuntimeError{message: "error"},
+#   [{:elixir_eval, :__FILE__, 1, [file: 'iex', line: 26]}]}}
+```
+
+---
+
+### Разлика между link и monitor
+
+* `link` е двупосочна връзка, `monitor` е еднопосочна.
+* `link` има нужда от `trap_exit`, за да не убива свързаният процес.
+* Може да имаме `monitor`-и от процес A към процес B (полезно е при писане на библиотеки).
+* `monitor` е "неинваразивен" - не влияе на живота на наблюдавания процес.
+* `link` се отнася повече към организацията на процесите и разпространението на грешките.
+  * Отношението между уеб сървър <-> заявка.
+  * Ако уеб сървърът терминира, то заявката също трябва да терминира. Обратното не е вярно.
+  
 ---
 
 ### Шаблони
@@ -468,19 +578,58 @@ spawn(fn -> exit(:normal) end)
 
 ```elixir
 pid = spawn(fn ->
-  state = %{a: 1, b: 2, c: 3}
   receive do
-    {:get_state, pid, ref} -> send(pid, {:state, ref, state})
+    {:get_state, pid} -> send(pid, {:state, "state"})
+  end
+end)
+
+send(pid, {:get_state, self()})
+receive do
+  {:state, state} -> state
+end
+```
+
+---
+
+#### Синхронна комуникация чрез асинхронни съобщения
+
+```elixir
+pid = spawn(fn ->
+  receive do
+    {:get_state, pid, ref} -> send(pid, {:state, ref, "state"})
   end
 end)
 
 ref = make_ref()
 send(pid, {:get_state, self(), ref})
-state = receive do
+receive do
   {:state, ^ref, state} -> state
 end
-IO.puts(inspect(state))
-#=> %{a: 1, b: 2, c: 3}
+
+```
+
+---
+
+#### Синхронна комуникация чрез асинхронни съобщения
+
+```elixir
+pid = spawn(fn -> 
+  receive do
+    {:call, {pid, ref}, msg} -> send(pid, {:reply, ref, msg}
+  end
+end)
+
+ref = Process.monitor(pid)
+send(pid, {:call, {self(), ref}, msg})
+
+receive do
+  {^ref, reply} ->
+    Process.demonitor(ref, [:flush])
+    reply
+
+  {:DOWN, ^ref, :process, ^pid, status} ->
+    exit(status)
+end
 ```
 
 ---
