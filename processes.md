@@ -52,7 +52,7 @@ marp: true
 
 * Дефиниции на конкурентност, паралелизъм и скалируемост. Примери.
 * Създаване на процеси.
-* Комуникация между процеси
+* Комуникация между процеси.
 * Наблюдаване на процеси. Разпространение на грешките.
 * В следващата лекция: Live coding имплементация на конкурентни абстракции.
 
@@ -82,27 +82,6 @@ marp: true
 
 ---
 
-### Проблемите на конкурентността
-
-* Програмите са по-трудни за писане и поддръжка.
-  * Синхронизация, координация, планиране на изпълнението.
-* Програмите са по-трудни за дебъгване.
-* Допълнително натоварване породено от постоянна смяна на контекста.
-* Конкурентните подзадачи отнемат по-дълго време за изпълнение при натоварване.
-* Не всички програми могат да бъдат написани конкурентно.
-
----
-
-### Защо има нужда от конкурентност?
-
-* По-пълноценно използване на ресурсите.
-* Подобряване на бързината на отговор от системата.
-* Позволява да изпълняваме повече задачи едновременно (според външен наблюдател) от броя налични процесорни ядра.
-* Не позволява на една или няколко задачи да монополизират ресурсите.
-  
-
----
-
 ### Конкурентност и паралелизъм
 
 * **Конкуретност** се отнася до структурата на една програма.
@@ -127,18 +106,39 @@ marp: true
 
 ### Конкурентност и паралелизъм
 
-* Кодът, написан на Elixir е **конкурентен** и **при възможност, паралелен**.
+* Кодът, написан на Elixir, е **конкурентен** и **при възможност, паралелен**.
 * `iex --erl "+S 1" -S mix` - Стартира проекта с 1 Scheduler; използва една нишка на едно процесорно ядро. Имаме **конкурентност**, но **без паралелизъм**
 * `iex --erl "+S 8" -S mix` (при изпълнение на процесор с 8 ядра) - Имаме **конкурентност** и **паралелизъм**.
 
 ---
 
-### Модели за конкурентно програмиране
+### Проблемите на конкурентността
+
+* Програмите са по-трудни за писане и поддръжка.
+  * Синхронизация, координация, планиране на изпълнението.
+* Програмите са по-трудни за дебъгване.
+* Допълнително натоварване породено от постоянна смяна на контекста.
+* Конкурентните подзадачи отнемат по-дълго време за изпълнение при натоварване.
+* Не всички програми могат да бъдат написани конкурентно.
+
+---
+
+### Защо има нужда от конкурентност?
+
+* По-пълноценно използване на ресурсите.
+* Подобряване на бързината на отговор от системата.
+* Позволява да изпълняваме повече задачи едновременно (според външен наблюдател) от броя налични процесорни ядра.
+* Не позволява на една или няколко задачи да монополизират ресурсите.
+  
+---
+
+### Комуникация между участници в конкурентна система
 
 * **Чрез споделена памет**
   * Пример: A и B са две програми, които се изпълняват на един компютър и споделят файловата система.
   * Пример: А и B са две нишки, които достъпват обща променлива-стек и добавят и премахват елементи от него.
 * **Чрез изпращане на съобщения**
+  * Пример: Всичко в Elixir.
   * Пример: A и B са уеб браузър и уеб сървър - А изпраща заявки за уеб страница и ресурси на B; B обработва заявките и изпраща резултатите на A.
 
 ---
@@ -152,10 +152,26 @@ marp: true
 
 ### Процеси
 
+* Процесът винаги има адрес, понякога има и име.
 * Всичко в Elixir се изпълнява в процес.
 * Кодът, изпълняван в процеса, е последователен и функционален.
 * Ако искаме да изпълним конкурентно задача A и задача B, то трябва да ги изпълним в отделни процеси.
-* Когато един процес приключи своята работа, то той "умира". (`Process.alive?` връща `false`).
+* Когато един процес приключи своята работа, то той "умира".
+* Elixir проектът, чрез който виждате тази презентация, изпълнява ~320 процеса (по време на писането на презентацията).
+
+---
+
+![bg 90%](assets/processes/languages.png)
+
+---
+
+![](assets/processes/process_anatomy.png)
+
+---
+
+- [PCB C Struct](https://github.com/erlang/otp/blob/5400ccf243a31d664153a4b9ceb9de3edfce1e0e/erts/emulator/beam/erl_process.h#L1007)
+
+<img class="center_img" src="assets/processes/process_pcb.png" width="40%" />
 
 ---
 
@@ -179,18 +195,28 @@ marp: true
 
 ### Освен нещата, които са общи и/или променими
 
-- `refc binaries`, `ets`, `persistent_term`, `process dictionary`, etc.
-- Неща, предоставени от платформата, които са правилно имплементирани.
+* `refc binaries`, `ets`, `persistent_term`, `process dictionary`, `mailbox`, etc.
+* Все неща, предоставени от платформата, които са правилно имплементирани.
 
 <img class="center_img" src="assets/processes/gen_mutafchiiski_2.png" width="40%" />
 
 ---
 
-![](assets/processes/process_anatomy.png)
- 
+### Stop The World Garbage Collection
+
+- Когато GC спира целия свят, то броят обработени задачи през това време спада до 0.
+<img class="center" src="assets/processes/stop_the_world_gc.png" />
+
 ---
 
-![bg 40%](assets/processes/process_pcb.png)
+### Per Process Garbage Collection
+
+* В Elixir GC не "спира света".
+* Всеки процес изпълнява Garbage Collection самостоятелно.
+* Докато един процес изпълнява GC, другите процеси могат да правят каквото си искат.
+* Generational semi-space copying collector (using Cheney's copy collection algorithm)
+* Технически детайли: [тук](https://www.erlang.org/doc/apps/erts/garbagecollection) и [тук](https://blog.stenmans.org/theBeamBook/#_the_garbage_collector_gc)
+* [Haskell vs Go vs Elixir GC](https://www.theerlangelist.com/article/reducing_maximum_latency)
 
 ---
 
@@ -198,22 +224,22 @@ marp: true
 
 * Пример: `#PID<0.481.0>`
 * `pid` - Process identifier. Уникален идентификатор на жив процес. PID на приключил процес може да бъде преизползван.
+* `self/0`, `spawn/{1,3}` и `spawn_link/{1,3}` връщат `pid`.
 * `pid` се визуализира като наредена тройка числа: `{node, id, serial}`.
   * Всички процеси на един node имат `node` равен на `0`.
   * `id` се увеличава с 1 при всяко създаване на процес.
   * Когато `id` стигне `MAXPROCS`, `serial` се увеличава с 1 и `id`.
   * Ако един `pid` има `node` различно от 0, то той сочи към процес на друг node.
-* `self`, `spawn` и `spawn_link` връщат `pid`
 * https://www.erlang.org/doc/efficiency_guide/advanced.html
 
 ---
 
 ### Създаване на процеси
 
-* `spawn/1` - създава процес, който изпълнява функцията, подадена като аргумент
-* `spawn/3` - създава процес, който изпълнява функцията зададена чрез тройката Module, Function, Arguments (MFA)
-* `spawn_link/{1,3}` - създава процес, подобно на `spawn`, но също така двата процеса се "свързват" (повече за това по-късно)
-* `spawn_monitor/{1,3}` - създава процес, подобно на `spawn`, но също така създаденият процес бива "наблюдаван" от създаващия го процес (повече за това по-късно)
+* `spawn/1` - създава процес, който изпълнява функцията, подадена като аргумент.
+* `spawn/3` - създава процес, който изпълнява функцията зададена чрез тройката `Module, Function, Arguments` (`MFA`).
+* `spawn_link/{1,3}` - създава процес, подобно на `spawn`; двата процеса се "свързват" (повече за това по-късно).
+* `spawn_monitor/{1,3}` - създава процес, подобно на `spawn`; създаденият процес бива "наблюдаван" от създаващия го процес (повече за това по-късно)
 
 --- 
 
@@ -261,31 +287,46 @@ for i <- 1..20, do: spawn(fn -> IO.puts(i) end)
 
 * Процесите изпращат съобщения: `send/2`
 * Процесите получават съобщения: `receive/1`
-* Съобщенията са асинхронни - `send/2` винаги връща изпратеното съобщение, без гаранции, че то е получено.
+* Съобщенията са асинхронни - `send/2` винаги връща изпратеното съобщение, без да проследи получаването.
   * Трябва сами да имплементираме синхронна комуникация, когато е необходимо (или да използваме готови шаблони от библиотеката).
 * Всеки процес има пощенска кутия (mailbox) - място, където се съхраняват съобщенията, които са изпратени до него.
 
 ---
 
-![](assets/processes/process_anatomy.png)
+### Send
 
+* `send/2` - изпраща съобщение до процес.
+* Първият аргумент е `pid` на процеса, към който се изпраща съобщението.
+* Вторият аргумент е самото съобщение.
+  * Всеки валиден тип в Elixir може да бъде съобщение.
+* `send(self(), :hello)` - изпраща съобщение към себе си.
 ---
 
-### Selective receive
+### Receive
 
-* Selective receive.
 * `receive` дефинира, подобно на `case`, множество шаблони, които се съпоставят последователно.
 * Ако някой от шаблоните се съпостави, то кодът му се изпълнява и `receive` завършва.
 * Ако никой от шаблоните не се съпостави, то `receive` блокира процеса:
   * Докато не се получи съобщение, което да се съпостави с някой от шаблоните.
   * Докато не изтече таймаут, дефиниран с `after`.
-* Ако процесът получи съобщение, което не се съпоставя с никой от шаблоните, то съобщението се премества в структура, съдържаща видяните съобщения.
+* Ако отляво има само име на променлива, то всяко съобщение успешно се съпоставя с него.
+
+---
+
+```elixir
+# Чете всяко съобщение, без да го съпоставя с някой шаблон
+receive do
+  msg -> IO.inspect(msg)
+end
+```
 
 ---
 
 ```elixir
 pid = spawn(fn ->
   IO.puts(DateTime.utc_now())
+  # Чака за съобщение :some_msg. Ако не го получи в рамките на 5 секунди,
+  # изпълнява кода в after.
   receive do
     :some_msg -> :ok
   after 
@@ -303,6 +344,7 @@ end)
 
 ```elixir
 pid = spawn(fn ->
+  # selective receive - съпоставя съобщенията с шаблони
   receive do
     {:pattern_1, from} -> send(from, :received_pattern_1)
     {:pattern_2, from} -> send(from, :received_pattern_2)
@@ -367,7 +409,10 @@ send(pid, :print_info)
 
 ![bg right:30%](assets/processes/mailbox.png)
 
+* Един процес има една пощенска кутия.
 * Пощенската кутия на процес е структура, която съдържа получените съобщения.
+* Пощенската кутия няма адрес или име.
+  * Именувани процеси и безименни пощенски кутии vs Безименни горутини и именувани канали
 * Когато процес изпраща съобщение, то той **копира** данните от своя хийп в пощенската кутия на другия процес.
 * Имплементация: [The Beam Book](https://blog.stenmans.org/theBeamBook/#_mailboxes_and_message_passing)
 
@@ -395,7 +440,7 @@ send(pid, :print_info)
 
 ---
 
-### Гаранции
+### Гаранции при изпращане на съобщение
 
 * Почти никакви. Приема се, че съобщенията могат да не бъдат доставени.
 * `send` връща директно, без да се интересува дали съобщението е получено.
@@ -404,22 +449,36 @@ send(pid, :print_info)
 
 ---
 
+### Group leader
+
+* Всеки процес участва в някаква група и всяка група има лидер.
+* Процес се присъединява към групата на процеса, който го е създал.
+* Всички IO операции се пренасочват към груповия лидер.
+
+---
+
 ```elixir
 printer_pid = spawn(fn ->
   receive do
-    {:print, text} -> IO.puts(text)
+    {:print, text} -> IO.puts(text <> " from #{self()}!"
   end
 end)
 
-send(printer_pid, {:print, "Hello from #{inspect(self())}!"})
+IO.puts("Hello from #{self()}!")
+#=> Hello from #PID<0.111.0>!
+
+# `self()` и `pid` имат общ групов лидер, затова виждаме IO.puts
+# изпълнен в процес, различен от текущия
+send(printer_pid, {:print, "Hello"})
 #=> Hello from #PID<0.1303.0>!
-# {:print, "Hello from #PID<0.111.0>!"}
-send(printer_pid, {:print, "1+2 = 3"})
-#=> 1+2 = 3
-# {:print, "1+2 = 3"})
+
+send(printer_pid, {:print, "1 + 2 = 3"})
+#=> 1 + 2 = 3 from #PID<0.1303.0>!
 ```
 
 ---
+
+### Грешки в друг процес
 
 ```elixir
 fun = fn -> {:error, "something went wrong"} end
@@ -429,6 +488,9 @@ spawn(fn -> raise "error" end)
 spawn(fn -> throw 10 end)
 spawn(fn -> exit(:normal) end)
 ```
+
+* Можем само да видим принтирана грешка на екрана заради общ групов лидер
+* Поради изолацията на процесите, грешките в тях не се пренасят на други процеси.
 
 ---
 
@@ -579,9 +641,8 @@ flush()
 
 ---
 
-#### Синхронна комуникация чрез асинхронни съобщения
-
 ```elixir
+# Синхронна комуникация чрез асинхронни съобщения
 pid = spawn(fn ->
   receive do
     {:get_state, pid} -> send(pid, {:state, "state"})
@@ -589,6 +650,7 @@ pid = spawn(fn ->
 end)
 
 send(pid, {:get_state, self()})
+
 receive do
   {:state, state} -> state
 end
@@ -596,9 +658,8 @@ end
 
 ---
 
-#### Синхронна комуникация чрез асинхронни съобщения
-
 ```elixir
+# Синхронна комуникация чрез асинхронни съобщения
 pid = spawn(fn ->
   receive do
     {:get_state, pid, ref} -> send(pid, {:state, ref, "state"})
@@ -607,6 +668,7 @@ end)
 
 ref = make_ref()
 send(pid, {:get_state, self(), ref})
+
 receive do
   {:state, ^ref, state} -> state
 end
@@ -615,9 +677,8 @@ end
 
 ---
 
-#### Синхронна комуникация чрез асинхронни съобщения
-
 ```elixir
+# Синхронна комуникация чрез асинхронни съобщения
 pid = spawn(fn -> 
   receive do
     {:call, {pid, ref}, msg} -> send(pid, {:reply, ref, msg}
@@ -639,10 +700,42 @@ end
 
 ---
 
-#### "Mutable" state
+```elixir
+# Синхронна комуникация с timeout
+pid = spawn(fn -> 
+  receive do
+    {:call, {pid, ref}, msg} -> 
+    Process.sleep(Enum.random(0..10_000))
+    send(pid, {:reply, ref, msg}
+  end
+end)
+
+ref = Process.monitor(pid)
+send(pid, {:call, {self(), ref}, msg})
+
+receive do
+  {^ref, reply} ->
+    Process.demonitor(ref, [:flush])
+    reply
+
+  {:DOWN, ^ref, :process, ^pid, status} ->
+    exit(status)
+after
+  5_000 ->
+    Process.demonitor(ref, [:flush])
+    raise "timeout"
+end
+```
+
+---
 
 ```elixir
+# "Mutable" state
 defmodule Counter do
+  def start_link() do
+    spawn_link(__MODULE__, :loop, [0])
+  end
+
   def get_next(pid) do
     ref = make_ref()
     send(pid, {:get_counter, self(), ref})
@@ -655,35 +748,71 @@ defmodule Counter do
     receive do
       {:get_counter, pid, ref} -> 
         send(pid, {:counter, ref, counter})
-        loop(counter + 1)
+        loop(counter + 1) # StackOverflow???
     end
   end
 end
 
-pid = spawn(Counter, :loop, [0])
-IO.puts(Counter.get_next(pid))
-IO.puts(Counter.get_next(pid))
+pid = Counter.start_link()
+IO.puts(Counter.get_next(pid)) # => 0
+IO.puts(Counter.get_next(pid)) # => 1
+IO.puts(Counter.get_next(pid)) # => 2
 ```
 
 ---
 
-### Демо
+## Именуване на процеси
 
-![bg 70%](assets/processes/processes_sum_first_n.png)
+* В някои случаи е по-удобно вместо променящ се `pid`, да имаме име на процеса.
+* Ако един процес е уникален/специален, то може да му дадем име.
+* Ако един уеб сървър обработва всяка заявка в отделен процес, то тези процеси не трябва да имат име.
+* Има различни механизми за именуване на процеси.
+  * `:erlang.register/2`;
+  * `:global.register_name/2`;
+  * `Registry` модул;
+  * `pg2`;
+  * Библиотеки: `swarm`, `horde` и др.
 
 ---
-
-### Демо
 
 ```elixir
-Process.list()
- |> Enum.map(&{&1, Process.info(&1)}) 
- |> Enum.map(fn {pid, info} -> {pid, info[:reductions]} end) 
- |> Enum.sort_by(&elem(&1, 1), :desc)
- |> Enum.take(10)
+pid = Counter.start_link() # От предишните слайдове
+:erlang.register(:counter, pid)
+
+# Изпраща съ
+send(:counter, {:get_counter, self(), make_ref()})
+send(pid, {:get_counter, self(), make_ref()})
+
+resolved_pid = :erlang.whereis(:counter)
+send(resolved_pid, {:get_counter, self(), make_ref()})
+
+flush()
+# {:counter, #Reference<0.997260736.984612865.46599>, 0}
+# {:counter, #Reference<0.997260736.984612865.51911>, 1}
+# {:counter, #Reference<0.997260736.984612865.62775>, 2}
 ```
 
-* :dbg.tpl(:_, []); Process.sleep(1); :dbg.stop()
+---
+
+```elixir
+{:ok, _} = Registry.start_link(keys: :unique, name: MyRegistry)
+pid = Counter.start_link() # От предишните слайдове
+Registry.register(MyRegistry, :counter, pid)
+
+[{_, resolved_pid}] = Registry.lookup(MyRegistry, :counter)
+send(resolved_pid, {:get_counter, self(), make_ref()})
+send(pid, {:get_counter, self(), make_ref()})
+# send(:counter, {:get_counter, self(), make_ref()}
+# * 1st argument: invalid destination
+
+flush()
+# {:counter, #Reference<0.997260736.985399297.2709>, 0}
+# {:counter, #Reference<0.997260736.985399297.8026>, 1}
+```
+
+---
+
+![bg 70%](assets/processes/processes_sum_first_n.png)
 
 ---
 
