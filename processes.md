@@ -1,6 +1,7 @@
 ---
 
 theme: uncover
+hidden: true
 style: |
   .center_img {
     margin: auto;
