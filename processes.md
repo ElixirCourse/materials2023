@@ -762,6 +762,33 @@ IO.puts(Counter.get_next(pid)) # => 2
 
 ---
 
+```elixir
+# Sneak peek: GenServer синхронна комуникация и mutable state
+defmodule Counter2 do
+  use GenServer
+
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, %{}, name: Keyword.get(opts, :name))
+  end
+
+  def init(_), do: {:ok, %{counter: 0}}
+ 
+  def handle_call(:get, _from, state) do
+    {
+      :reply,  # Ще отговорим на извикващия процес
+      state.counter, # Това е отговорът
+      Map.update!(state, :counter, & &1 + 1) # Новото състояние
+    }
+  end
+end
+
+{:ok, pid} = Counter2.start_link(name: :counter)
+IO.puts(GenServer.call(:counter, :get)) # => 0
+IO.puts(GenServer.call(pid, :get)) # => 1
+IO.puts(GenServer.call(:counter, :get)) # => 2
+```
+---
+
 ## Именуване на процеси
 
 * В някои случаи е по-удобно вместо променящ се `pid`, да имаме име на процеса.
