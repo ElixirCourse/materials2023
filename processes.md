@@ -44,7 +44,7 @@ marp: true
 
 ## Увод в конкурентното програмиране с Elixir
 
-<img class="center_img" src="assets/processes/concurrency_vs_parallelism.png" width="40%" />
+<img class="center_img" src="assets/concurrency_vs_parallelism.png" width="40%" />
 
 ---
 
@@ -70,15 +70,15 @@ marp: true
 
 ---
 
-<img class="center_img" src="assets/processes/concurrency_vs_parallelism_coffe.png" width="70%" />
+<img class="center_img" src="assets/concurrency_vs_parallelism_coffe.png" width="70%" />
 
 ---
 
-<img class="center_img" src="assets/processes/chop_stir_one_chef.png" width="70%" />
+<img class="center_img" src="assets/chop_stir_one_chef.png" width="70%" />
 
 ---
 
-<img class="center_img" src="assets/processes/chop_stir_two_chefs.png" width="70%" />
+<img class="center_img" src="assets/chop_stir_two_chefs.png" width="70%" />
 
 ---
 
@@ -144,8 +144,8 @@ marp: true
 ---
 
 <div class="side_by_side">
-<img src="assets/processes/shared_memory_concurrency_model.png" width="50%" />
-<img  src="assets/processes/message_passing_concurrency_model.png" width="50%" />
+<img src="assets/shared_memory_concurrency_model.png" width="50%" />
+<img  src="assets/message_passing_concurrency_model.png" width="50%" />
 </div>
 
 ---
@@ -161,17 +161,17 @@ marp: true
 
 ---
 
-![bg 90%](assets/processes/languages.png)
+![bg 90%](assets/languages.png)
 
 ---
 
-![](assets/processes/process_anatomy.png)
+![](assets/process_anatomy.png)
 
 ---
 
 - [PCB C Struct](https://github.com/erlang/otp/blob/5400ccf243a31d664153a4b9ceb9de3edfce1e0e/erts/emulator/beam/erl_process.h#L1007)
 
-<img class="center_img" src="assets/processes/process_pcb.png" width="40%" />
+<img class="center_img" src="assets/process_pcb.png" width="40%" />
 
 ---
 
@@ -189,7 +189,7 @@ marp: true
 
 ### Пълна изолация
 
-<img class="center_img" src="assets/processes/gen_mutafchiiski_1.png" width="40%" />
+<img class="center_img" src="assets/gen_mutafchiiski_1.png" width="40%" />
 
 ---
 
@@ -198,14 +198,14 @@ marp: true
 * `refc binaries`, `ets`, `persistent_term`, `process dictionary`, `mailbox`, etc.
 * Все неща, предоставени от платформата, които са правилно имплементирани.
 
-<img class="center_img" src="assets/processes/gen_mutafchiiski_2.png" width="40%" />
+<img class="center_img" src="assets/gen_mutafchiiski_2.png" width="40%" />
 
 ---
 
 ### Stop The World Garbage Collection
 
 - Когато GC спира целия свят, то броят обработени задачи през това време спада до 0.
-<img class="center" src="assets/processes/stop_the_world_gc.png" width="90%"/>
+<img class="center" src="assets/stop_the_world_gc.png" width="90%"/>
 
 ---
 
@@ -279,7 +279,7 @@ for i <- 1..20, do: spawn(fn -> IO.puts(i) end)
 ### Живота на един процес
 
 - Когато един процес свърши своята работа, то той бива терминиран.
-<img src="assets/processes/process_life.gif" />
+<img src="assets/process_life.gif" />
 
 ---
 
@@ -420,7 +420,7 @@ send(pid, :print_info)
 
 ### Имаш поща
 
-![bg right:30%](assets/processes/mailbox.png)
+![bg right:30%](assets/mailbox.png)
 
 * Един процес има една пощенска кутия.
 * Пощенската кутия на процес се държи като опашка, която съдържа получените съобщения.
@@ -443,7 +443,7 @@ send(pid, :print_info)
 
 ### Изпращане на съобщение
 
-![bg 100% left:30%](assets/processes/sending_message_internals.png)
+![bg 100% left:30%](assets/sending_message_internals.png)
 
 * Пресмята размера на Msg.
 * Алокира място за съобщението (в хийпа на P2 или в `m-buf`).
@@ -546,7 +546,7 @@ spawn_link(fn -> raise "error" end)
 
 ---
 
-![](assets/processes/link_exit.png)
+![](assets/link_exit.png)
 
 ---
 
@@ -861,7 +861,7 @@ flush()
 
 ---
 
-![bg 70%](assets/processes/processes_sum_first_n.png)
+![bg 70%](assets/processes_sum_first_n.png)
 
 ---
 
