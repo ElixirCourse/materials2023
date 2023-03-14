@@ -1,7 +1,6 @@
 ---
 
 theme: uncover
-hidden: true
 style: |
   .center_img {
     margin: auto;
@@ -746,10 +745,14 @@ end
 ```elixir
 # "Mutable" state
 defmodule Counter do
+  # Стартираме нов процес, който изпълнява loop(0)
   def start_link() do
     spawn_link(__MODULE__, :loop, [0])
   end
 
+  # Интерфейс, който симулира синрхонна комуникация.
+  # Потребителят извиква get_next(pid), който вътрешно
+  # изпраща съобщение до процеса pid и чака отговор.
   def get_next(pid) do
     ref = make_ref()
     send(pid, {:get_counter, self(), ref})
@@ -758,6 +761,10 @@ defmodule Counter do
     end
   end
 
+  # Безкрайна рекурсия, която чака съобщение, обработва го,
+  # извиква себе си с нова стойност на counter, и отново
+  # чака съобщение. Опашкковата (tail) рекурсия е задължителна,
+  # за да не се получи StackOverflow.
   def loop(counter) do
     receive do
       {:get_counter, pid, ref} -> 
@@ -800,6 +807,7 @@ IO.puts(GenServer.call(:counter, :get)) # => 0
 IO.puts(GenServer.call(pid, :get)) # => 1
 IO.puts(GenServer.call(:counter, :get)) # => 2
 ```
+
 ---
 
 ## Именуване на процеси
