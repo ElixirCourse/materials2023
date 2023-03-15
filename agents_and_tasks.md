@@ -423,8 +423,8 @@ defmodule Value do
     pid
   end
 
-  def get(value), do: Agent.get(value, &(&1))
-  def set(value, v), do: Agent.update(value, fn _ -> v end)
+  def get(pid), do: Agent.get(pid, &(&1))
+  def set(pid, value), do: Agent.update(pid, fn _ -> value end)
 end
 ```
 
