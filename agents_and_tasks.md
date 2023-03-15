@@ -795,9 +795,16 @@ end)
 
 ```elixir
 defmodule TaskEnum do
-  def map(enumerable, fun) do
+  def map(enumerable, fun, opts \\ []) do
+    # Колко задачи могат да бъдат изпълнени паралелно
+     max_workers = Keyword.get(opts, :max_workers, System.schedulers_online())
+    # Трябва ли отговорите да са в същия ред. Тъй като времето
+    # за изпълнение е различно, то отговорите трябва да се буферират
+    # и подредят, което заема допълнително памет.
+    ordered = Keyword.get(opts, :ordered, true)
+    
     enumerable
-    |> Task.async_stream(fun)
+    |> Task.async_stream(fun, max_workers: max_workers, ordered: ordered)
     |> Stream.map(fn {:ok, val} -> val end)
     |> Enum.to_list()
   end
