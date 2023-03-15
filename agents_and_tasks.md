@@ -144,6 +144,16 @@ marp: true
 
 ---
 
+### Една възможна имплементация на sleep
+
+```elixir
+sleep = fn milliseconds ->
+  receive do
+  after
+    milliseconds -> :ok
+  end
+end
+
 ### Process.sleep/1
 
 Използване:
