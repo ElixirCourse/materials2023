@@ -141,6 +141,7 @@ marp: true
 * Единственият аргумент, който получава е време (в милисекунди), за което процеса да "спи".
 * Докато един процес "спи" той не прави нищо.
 * Не го ползваме, за да чакаме "нещо" да се случи
+* Не го ползваме, за да чакаме процес да умре
 
 ---
 
@@ -172,6 +173,7 @@ Process.sleep(:infinity)
 ```elixir
 pid = spawn(fn -> do_something() end)
 
+# Чакаме докато работата е свършена, или процесът умре
 Process.sleep(2_000)
 
 Process.alive?(pid)
@@ -191,6 +193,29 @@ end)
 
 receive do
   :work_done -> continue_doing_something()
+after
+  30_000 ->
+    # Можем да помислим и за таймоут, ако искаме
+    {:error, :timeout}
+end
+```
+
+---
+
+#### Добро:
+
+```elixir
+parent = self()
+
+pid = spawn(fn ->
+  do_something()
+  send(parent, :work_done)
+end)
+
+ref = Process.monitor(pid)
+
+receive do
+  {:DOWN, ^ref, _, _, _} -> :process_is_down
 after
   30_000 ->
     # Можем да помислим и за таймоут, ако искаме
