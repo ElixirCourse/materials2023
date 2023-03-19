@@ -121,7 +121,6 @@ marp: true
 ### Защо erlang не е статично типизиран?
 
 * Динамичното типизиране помага с hot code reloading (промяна на цели модули и функции runtime).
-* Дистрибутиран erlang прави това още по-трудно (node-ове извикват функции/пращат съобщения).
 * Динамичното типизиране помага с изпращане на всякакви съобщения.
 
 ---
@@ -152,13 +151,6 @@ marp: true
 * Един от тях е бил през 1997, воден от Simon Marlow (lead GHC dev) и  Philip Wadler (haskell design, заслуги за теорията зад монадите).
 * Резултатът бил този [научен труд](http://homepages.inf.ed.ac.uk/wadler/papers/erlang/erlang.pdf)
 
----
-
-#### И в днешно време...
-
-* Има type checker за Erlang (OTP 25+) на Whatsapp : https://github.com/WhatsApp/eqwalizer
-* Има и PhD проект на Guillaume Duboc с ръководител Giuseppe Castagna: https://elixir-lang.org/blog/2022/10/05/my-future-with-elixir-set-theoretic-types/
-
 
 ---
 ### Защо erlang не е статично типизиран?
@@ -166,6 +158,13 @@ marp: true
 * След като процесите и съобщенията са едни от най-важните неща за Ерланг, става ясно защо тази система не е добавена.
 * Други опити за типизиране на Erlang също се провалили.
 * Трябва ли да изоставим всякаква надежда?
+
+---
+
+#### Не точно..
+
+* Има type checker за Erlang (OTP 25+) на Whatsapp : https://github.com/WhatsApp/eqwalizer
+* Има и PhD проект на Guillaume Duboc с ръководител Giuseppe Castagna: https://elixir-lang.org/blog/2022/10/05/my-future-with-elixir-set-theoretic-types/
 
 ---
 ### Dialyzer
