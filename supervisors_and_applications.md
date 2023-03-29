@@ -42,7 +42,7 @@ marp: true
 
 ---
 
-## Supervisors & Applications
+## Supervisors and Applications
 
 ---
 
