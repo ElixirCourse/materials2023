@@ -122,6 +122,15 @@ marp: true
 * Имат славата на GOTO програмиране и наистина е хубаво да помислим дали има нужда от тях в дадена ситуация.
 
 ---
+### Let It Crash!
+
+* "Let It Crash!" не означава, че оставяме бъгове и проблеми в кода, когато ги намерим.
+* Бъгове и проблеми се тестват и оправят.
+* Обикновено "Let It Crash!" е свързан с външни ресурси, достъп и неща над които нямаме контрол, ако процесът се рестартира с начален стейт има шанс тази грешка да се оправи.
+* За грешно поведение и реакция - match на *{:error, reason}* и изпълни конкретно действие.
+
+
+---
 ## Грешки
 
 - Прието е функции, при които има проблем да връщат:
@@ -214,14 +223,14 @@ end
 #### Да се запознаем със структура-грешка
 
 ```elixir
-defmodule EvenWorstError do
+defmodule EvenWorseError do
   defexception [:message]
 
   @impl true
   def exception(value) do
     msg = "An even worst error was raised with value #{inspect(value)}"
 
-    %EvenWorstError{message: msg}
+    %EvenWorseError{message: msg}
   end
 end
 ```
@@ -229,9 +238,9 @@ end
 ---
 ```elixir
 try do
-  raise EvenWorstError, :my_bad
+  raise EvenWorseError, :my_bad
 rescue
-  error in EvenWorstError ->
+  error in EvenWorseError ->
     IO.puts(error.message)
 end
 ```
@@ -297,7 +306,7 @@ receive do msg -> IO.inspect(msg); end
 ```
 
 ---
-### Случай 1 : Нормално излизане на процес
+### Случай 1: Нормално излизане на процес
 
 ```elixir
 action = fn -> :nothing end
@@ -314,7 +323,7 @@ end
 ```
 
 ---
-### Случай 2 : Излизане с **exit/1**
+### Случай 2: Излизане с **exit/1**
 
 ```elixir
 action = fn -> exit(:stuff) end
@@ -331,7 +340,7 @@ end
 ```
 
 ---
-### Случай 3 : Излизане с **exit(:normal)**
+### Случай 3: Излизане с **exit(:normal)**
 - Аналогично на случай 1:
 
 ```elixir
@@ -349,7 +358,7 @@ end
 ```
 
 ---
-### Случай 4 : Излизане с **raise**
+### Случай 4: Излизане с **raise**
 
 ```elixir
 action = fn -> raise("Stuff") end
@@ -369,7 +378,7 @@ end
 ```
 
 ---
-### Случай 5 : Излизане с **throw**
+### Случай 5: Излизане с **throw**
 
 ```elixir
 action = fn -> throw("Stuff") end
@@ -394,6 +403,20 @@ end
 * Може да се използва да ликвидираме процес от друг процес
 * Ако извикаме с `:kill` можем да убием даже процеси, които trap-ват сигнали.
 * Малко повече на тема [Process.exit](https://furlough.merecomplexities.com/elixir/otp/2021/05/31/the-many-and-varied-ways-to-kill-an-otp-process.html)
+
+---
+### Supervision и shutdown
+
+* Child спецификацията идва с опция за shutdown : когато Supervisor трябва да спре под-процес.
+* По дефаулт, когато това се случи *Process.exit(child, :shutdown)* се праща на процеса и се чака 5 секунди за чистене на ресурси.
+* Ако процесът не хваща сигнали само това ще го убие, но ако хваща след тези 5 минути *Process.exit(child, :kill)* се праща.
+* Тези пет секунди могат да се променят с число (в ms) или на :infinity.
+
+---
+### Supervision и shutdown
+
+* Можем да сложим и стойността **:brutal_kill**, тогава направо се праща *Process.exit(child, :kill)*.
+* *Process.exit(child, :shutdown)* ще наката под-процесът да извика **terminate/2** callback функцията.
 
 ---
 ## Вход-изход
