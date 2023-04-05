@@ -378,7 +378,7 @@ Macro.to_string(quote do: [1, 2, unquote_splicing(inner), 6])
 
 ---
 
-- Още един пример с речник този път:
+- Пример с речник:
 ```elixir
 kw = [foo: :bar, baz: :quix]
 Macro.to_string(quote do: %{unquote_splicing(kw)})
