@@ -116,7 +116,7 @@ end
 
 ---
 
-Ecto(Elixir's ORM):
+Ecto (Database Access, Data Mapping & Validation):
 
 ```elixir
 from o in Order,
