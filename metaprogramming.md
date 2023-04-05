@@ -391,7 +391,7 @@ Macro.to_string(quote do: %{unquote_splicing(kw)})
 
 ---
 
-- Това е опция на `quote`, позволява ни това:
+- Това е опция на `quote`, която ни позволява това:
 
 ```elixir
 defmodule Hello do
