@@ -140,6 +140,23 @@ end
 
 ---
 
+
+Absinthe (GraphQL Server implementation)
+
+```elixir
+field :subscribe, :subscription_plan do
+  arg(:plan_id, non_null(:integer))
+  arg(:card_token, :string, default_value: nil)
+  arg(:coupon, :string, default_value: nil)
+
+  middleware(JWTAuth)
+
+  resolve(&BillingResolver.subscribe/3)
+end
+```
+
+---
+
 ExUnit
 
 ```elixir
@@ -292,7 +309,23 @@ quote do: x
 [1, 2]       #=> Lists
 "strings"    #=> Strings
 {key, value} #=> Tuples with two elements
-# Идеи защо списъците от 2 елемента са литерали?
+```
+
+---
+
+Идеи защо списъците с 2 елемента са литерали?
+
+* [отговор](https://github.com/elixir-lang/elixir/blob/eda99eb989347bded9ec9ecd8e2d6f2feff56f82/lib/elixir/pages/Syntax%20Reference.md#keywords)
+
+```
+iex(1)> quote do: {}
+{:{}, [], []}
+iex(2)> quote do: {1}
+{:{}, [], [1]}
+iex(3)> quote do: {1,2}
+{1, 2}
+iex(4)> quote do: {1,2,3}
+{:{}, [], [1, 2, 3]}
 ```
 
 ---
@@ -486,6 +519,32 @@ FMI.if(true, [do: 1, else: 2])
 
 ---
 
+- Краткия синтаксис за дефиниране на функция е страничен ефект от
+това, че като последен аргумент може да изпускаме скобите
+- `def foo(), do: :work`
+- Ако добавим липсващите кръгли и квадратни скоби, получаваме:
+- С други думи `do/end` блоковете са синтактична захар над keyword
+списъците
+
+```elixir
+defmodule T do
+  def(foo(), [do: :work])
+end
+```
+
+---
+
+- Всъщност `def/defp/defmacro/defmacrop/defmodule` са също макроси
+- Това ни позволява да пишем ето така код:
+
+```elixir
+defmodule(Math, [
+  {:do, def(add(a, b), [{:do, a + b}])}
+])
+```
+
+---
+
 Пример `unless/if`
 
 ---
@@ -578,9 +637,20 @@ Macro.expand_once(ast, __ENV__)
 - На кратко:
 
 ```elixir
+defmodule OurModule do
+  defmacro __using__(opts) do
+    quote do
+       def get_opts(), do: unquote(opts)
+    end
+  end
+end
+
 defmodule SeeUsing do
   use OurModule, option: "Hello"
 end
+
+SeeUsing.get_opts()
+# => [option: "Hello"]
 ```
 
 ---
@@ -592,6 +662,9 @@ defmodule SeeUsing do
   require OurModule
   OurModule.__using__(option: "Hello")
 end
+
+SeeUsing.get_opts()
+# => [option: "Hello"]
 ```
 
 ---
