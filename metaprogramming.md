@@ -445,7 +445,8 @@ iex(2)> name
 
 ### Дефинираме ги с `defmacro`:
 
-* [Не можем да използваме така наречените специални форми за имена на макроси](https://hexdocs.pm/elixir/Kernel.SpecialForms.html)
+* Не можем да използваме така наречените специални форми за имена на макроси
+* Списък с всички специални форми: [тук](https://hexdocs.pm/elixir/Kernel.SpecialForms.html)
 
 ---
 
