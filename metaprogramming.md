@@ -629,7 +629,7 @@ B.hello()
 
 ---
 
-- Пример вече за `use GenServer`
+- Пример за `use GenServer`
 
 ---
 
