@@ -334,7 +334,7 @@ quote do: unquote(x) + 1
 
 ---
 
-- Пример с по-голям unquote:
+- Пример с по-голям `unquote`:
 
 ```elixir
 ast1 = quote do: 1 + 2
