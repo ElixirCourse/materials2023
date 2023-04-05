@@ -761,7 +761,3 @@ quote do: sum all 1, -1
   * Assertion library
   * Save defined tests
   * Run defined tests
-
----
-
-* Demo HTML library
