@@ -116,7 +116,6 @@ end
 
 ---
 
-
 Ecto(Elixir's ORM):
 
 ```elixir
@@ -180,7 +179,6 @@ assert 5 < 4
 
 ---
 
-
 Всъщност мета-програмирането в еликсир е толкова силно, че ни позволява:
 <img class="center_img" src="assets/elixir.png" width="75%" />
 
@@ -202,7 +200,6 @@ assert 5 < 4
 * можем да генерираме програмно AST и да го вмъкваме в модули
 
 ---
-
 
 #### quote
 
@@ -298,7 +295,6 @@ quote do: x
 # Идеи защо списъците от 2 елемента са литерали?
 ```
 
-
 ---
 
 ![Image-Absolute](assets/thinking.png)
@@ -372,8 +368,7 @@ Macro.to_string(quote do: [1, 2, unquote(inner), 6])
 
 #### unquote_splicing
 
-- Позволява ни да интерполираме изрази върху списъци, речници и наредени
-n-орки
+- Позволява ни да интерполираме изрази върху списъци, речници и наредени n-орки
 
 
 ```elixir
@@ -438,12 +433,6 @@ iex(2)> name
 
 [Пълен списък с опции на quote](https://hexdocs.pm/elixir/Kernel.SpecialForms.html#quote/2-options)
 
-
----
-
-Забелязахте ли, че AST-то прилича на LISP, ами то даже е [инспирирано от там](https://www.youtube.com/watch?v=IZvpKhA6t8A&feature=youtu.be&t=12m10s)
-
-
 ---
 
 ## Макроси
@@ -455,6 +444,8 @@ iex(2)> name
 ---
 
 ### Дефинираме ги с `defmacro`:
+
+* [Не можем да използваме така наречените специални форми за имена на макроси](https://hexdocs.pm/elixir/Kernel.SpecialForms.html)
 
 ---
 
@@ -542,11 +533,8 @@ Macro.expand_once(ast, __ENV__)
 ---
 
 - Чакай малко!
-
----
-
-- Q: Какво е __ENV__?
-- A: Текущият контекст.
+  * Q: Какво е __ENV__?
+  * A: Текущият контекст.
 
 ---
 
@@ -555,17 +543,16 @@ Macro.expand_once(ast, __ENV__)
 ---
 
 ##### [Macro](https://hexdocs.pm/elixir/Macro.html) модулът има доста удобни функции, повечето приемат за втори аргумент някакъв контекст.
-PS: Цъкни го.
+
+---
+
+- Забелязахте ли, че макросите и AST-то приличат на LISP макросите, ами то даже е [инспирирано от там](https://www.youtube.com/watch?v=IZvpKhA6t8A&feature=youtu.be&t=12m10s)
 
 ---
 
 #### Macro.expand
 
 - Пълното затваряне на операцията `Macro.expand_once` върху дадено AST
-
----
-
-- [Не можем да използваме така наречените специални форми за имена на макроси](https://hexdocs.pm/elixir/Kernel.SpecialForms.html)
 
 ---
 
