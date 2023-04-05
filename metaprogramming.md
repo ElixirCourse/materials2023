@@ -126,7 +126,7 @@ join: i in OrderItems, on: i.order_id == o.id
 
 ---
 
-Plug(Elixir's ~~http library~~ web specification)
+Plug (~~http library~~ web specification)
 
 ```elixir
 get "/hello" do
