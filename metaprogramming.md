@@ -758,7 +758,7 @@ quote do: sum all 1, -1
 
 ---
 
-* Demo testing library(ExUnit subset)
+* Demo: Test Library (ExUnit subset)
   * Assertion library
   * Save defined tests
   * Run defined tests
