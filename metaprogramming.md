@@ -698,7 +698,7 @@ Code.eval_quoted ast, a: 1
 
 ---
 
-- За сравнение - кода на [ecto](https://github.com/elixir-ecto/ecto) не ползва `var!`
+- За сравнение - кодът на [Ecto](https://github.com/elixir-ecto/ecto) не ползва `var!`
 
 ---
 
