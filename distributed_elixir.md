@@ -296,6 +296,74 @@ Node.ping(:"slavi@127.0.0.1")
 ```
 
 ---
+### Файлът *.hosts.erlang*
+
+- Съдържа списък от познати node-ове, които биха могли да се намерят в мрежата.
+- Файлът *.hosts.erlang*:
+
+```
+'a@127.0.0.1'.
+'b@127.0.0.1'.
+'c@127.0.0.1'.
+'d@127.0.0.1'.
+```
+
+- Функциата `:net_adm.names/0` ще листне всичко от там:
+
+```elixir
+:net_adm.names()
+#=> {:ok, [{'b', 45325}, {'a', 33599}]}
+```
+
+---
+### Стартиране със синхронизирани node-ове
+
+- Използва се *sys.config* за задаване на node-ове, които искаме да са online.
+- Ако използваме `sync_nodes_optional` се чака даденото време в `sync_nodes_timeout` и приложението тръгва:
+
+```erlang
+[{kernel,
+  [
+    {sync_nodes_optional, ['b@127.0.0.1', 'c@127.0.0.1']},
+    {sync_nodes_timeout, 30000}
+  ]}
+].
+```
+
+---
+### Дистрибутиран Application
+
+- Използва същата идея като синхронизацията.
+- За един и същ application се стартират няколко node-a.
+- С команди като:
+
+```bash
+iex --name a@127.0.0.1 --erl "-config da.sys.config" -S mix
+```
+
+---
+### Дистрибутиран Application
+
+- Такъв setup ще се нуждае от *sys.config* конфигурации като:
+
+```erlang
+[{kernel,
+  [{distributed, [{ecio, 5000, ['a@127.0.0.1', {'b@127.0.0.1', 'c@127.0.0.1'}]}]},
+   {sync_nodes_mandatory, ['b@127.0.0.1', 'c@127.0.0.1']},
+   {sync_nodes_timeout, 20000}
+  ]
+ }
+].
+```
+
+---
+### Дистрибутиран Application
+
+* Само на един node описаният `distributed` Application ще върви.
+* Ако този node падне един от другите ще стартира application-а.
+* Ако се появи най-приоритетният node в списъка, той ще поеме контрола като текущия спре Application-а и приоритетният го стартира.
+
+---
 ### Къси и дълги имена
 
 * Късите имена са за локална употреба, не се ползва DNS и само localhost (или alias локално)
@@ -356,6 +424,30 @@ Process.group_leader
 Process.info(pid(0, 129, 0), :group_leader)
 #=> {:group_leader, #PID<11629.66.0>}
 ```
+
+---
+### Глобален регистър на процеси
+
+- Къде ще се отпечата "Hey" и защо?
+
+```elixir
+# a@127.0.0.1 (ECIO)
+device_pid = Process.whereis(ECIO.Device)
+#=> #PID<0.234.0>
+:global.register_name(ECIO.Device, device_pid)
+#=> :yes
+
+# b@127.0.0.1 (Asynch)
+
+IO.puts(:global.whereis_name(ECIO.Device), "Hey")
+#=> :ok
+```
+
+---
+### Глобален регистър на процеси
+
+* Разбира се има и `:global.unregister_name/1` по атом.
+* Глобалният регистър е достъпен за всички connected nodes.
 
 ---
 ### Наблюдаване на Node-ове
