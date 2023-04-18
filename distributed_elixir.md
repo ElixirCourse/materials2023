@@ -127,13 +127,6 @@ elixir -S mix run --no-halt
 ```
 
 ---
-### И пак mix, mix, mix!
-
-```bash
-elixir --detached -S mix run --no-halt
-```
-
----
 ![Image-Absolute](assets/mixmixmix.jpg)
 
 ---
@@ -167,8 +160,6 @@ elixir --detached -S mix run --no-halt
 1. Какво означава да сме дистрибутирани?
 2. Node-ове и функции за свързване и комуникация.
 3. Проблемите на дистрибутираните системи.
-4. Тестване на дистрибутиран Elixir.
-5. Кога да ползваме дистрибутиран Elixir?
 
 ---
 ### Какво означава да сме дистрибутирани?
@@ -390,6 +381,7 @@ Node.spawn(:ivan@meddlandr, fn -> IO.puts(node()) end)
 
 ```elixir
 # @slavi
+
 defmodule DB do
   def tell_us_secret do
     IO.puts("Познавам всички и всеки!")
@@ -686,21 +678,6 @@ name_size = byte_size(rest) - (4*3)
 ---
 ### External Term Format
 
-- За атом след тага следва атом (отново закодиран, името на node-a на процеса).
-- След името на node-a имаме 4 * 3 байта, които ще разгледаме след малко.
-
-```elixir
-name_size = byte_size(rest) - (4*3)
-#=> 19
-
-<<131, tag::binary-size(1), binary_atom::binary-size(name_size), rest::binary >> = binary_pid
-#=> <<131, 88, 100, 0, 16, 109, 101, 100, 100, 108, 101, 64, 109, 101, 100, 100,
-#=>  108, 97, 110, 100, 114, 0, 0, 0, 110, 0, 0, 0, 0, 100, 56, 62, 180>>
-```
-
----
-### External Term Format
-
 - Името е атом, но във вложени term-ове нямаме *131* за начало.
 - Атомите се кодират по няколко начина, *ATOM_EXT*, което е deprecated се ползва все още в pid-ове.
 - Тагът на *ATOM_EXT* e 100, след това имаме 2 байта дължина на името и след това името:
@@ -744,13 +721,9 @@ name
 ## Свързване с вървящ node
 
 ```bash
-elixir --detached --name bot@127.0.0.1 -S mix run --no-halt
-iex --name botor@127.0.0.1 --remsh bot@127.0.0.1 --hidden
+elixir --pipe-to pipe logs --name a@127.0.0.1 -S mix run --no-halt
+iex --name b@127.0.0.1 --remsh a@127.0.0.1 --hidden
 ```
-
----
-## Отклонение от темата #2
-![Image-Absolute](assets/Screenshot_20190528_000840.png)
 
 ---
 ## Дистрибутирани програми - проблемите
