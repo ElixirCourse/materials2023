@@ -109,7 +109,7 @@ marp: true
 3. Какво е Supersvision дърво?
 
 ---
-### Как си пускаме BEAM node?
+### Как се стартира BEAM node?
 
 ```bash
 iex -S mix
