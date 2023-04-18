@@ -474,7 +474,7 @@ flush()
 ---
 ### Извикване на отдалечени функции
 
-* Използва се Erlang модула `:rpc`.
+* Използва се Erlang модула `:rpc` ([Remote procedure call](https://en.wikipedia.org/wiki/Remote_procedure_call)).
 * Отдолу продължаваме да работим с процеси.
 
 ---
