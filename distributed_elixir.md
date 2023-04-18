@@ -147,7 +147,9 @@ elixir --detached -S mix run --no-halt
 #### RELEASE
 
 * Има как да правим release, който да се пуска в production и не ползва Mix.
-* OTP Release е нещо, което или може да се пусне чрез инсталиран Erlang (не трябва Elixir) и даже без Erlang.
+* OTP Release е нещо, което може да се стартира:
+  * Чрез инсталиран Erlang (не трябва Elixir);
+  * Или дори без Erlang (енкапсулира ERTS в самия Release).
 * Elixir идва с mix команда за компилиране на release.
 
 ---
