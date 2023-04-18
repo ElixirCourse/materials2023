@@ -531,7 +531,7 @@ pid = :rpc.async_call(:meddle@meddland,
 ---
 ### Извикване на отдалечени функции
 
-- Функцията `nb_yield/4`
+- Функцията `nb_yield/4` (non blocking yield).
 
 ```elixir
 # @meddle
