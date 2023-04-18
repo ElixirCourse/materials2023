@@ -660,7 +660,7 @@ binary_pid = :erlang.term_to_binary(self())
 ### External Term Format
 
 - Винаги започват с 131
-- Второто е таг (в 1 байт) - за pid-ове : 88 (103 за по-стар формат)
+- Вторият байт е tag (в 1 байт) - за pid-ове : 88 (103 за по-стар формат)
 
 ```elixir
 <<131, tag::binary-size(1), rest::binary >> = binary_pid
