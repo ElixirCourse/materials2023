@@ -427,7 +427,7 @@ Process.group_leader
 
 # @ivan
 Process.info(pid(0, 129, 0), :group_leader)
-#=> {:group_leader, #PID<11629.66.0>}
+#=> {:group_leader, #PID<11629.66.0>} # Забележете, че първият елемент на pid не е 0!
 ```
 
 ---
