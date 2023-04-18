@@ -106,7 +106,7 @@ marp: true
 
 1. Какво е BEAM Node?
 2. Какво е OTP Application?
-3. Каквое Supersvision дърво?
+3. Какво е Supersvision дърво?
 
 ---
 ### Как си пускаме BEAM node?
