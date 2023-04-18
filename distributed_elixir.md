@@ -790,5 +790,5 @@ iex --name botor@127.0.0.1 --remsh bot@127.0.0.1 --hidden
 ![Image-Absolute](assets/25518fed78bdf02cec9041d90c00bd5f--jesse-pinkman-aaron-paul.jpg)
 
 ---
-### Let there be Iternity : Next time we continue...
+### Let there be Еternity : Next time we continue...
 ![Image-Absolute](assets/ouroboros.jpg)
