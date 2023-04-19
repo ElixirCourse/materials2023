@@ -273,6 +273,43 @@ Node.list()
 ```
 
 ---
+### Свързване на node-ове - Kubernetes
+
+* Най-малката единица за deployment в Kubernetes е pod.
+* Всяко приложение се изпълнява в контейнер в някой pod.
+* При deployment имената на pod-овете се променят (но не винаги).
+* При deployment нашето приложение може да получи различен IP адрес.
+* Това прави формирането на клъстър по-трудно
+
+---
+### Свързване на node-ове - Kubernetes
+
+```elixir
+config :libcluster,
+  topologies: [
+    k8s: [
+      strategy: Elixir.Cluster.Strategy.Kubernetes,
+      config: [
+        mode: :dns,
+        kubernetes_node_basename: "sanbase",
+        kubernetes_selector: "app=sanbase",
+        polling_interval: 10_000
+      ]
+    ]
+  ]
+```
+
+---
+### libcluster
+
+* Библиотека за автоматично формиране на BEAM клъстери
+* Предоставя различни механизми:
+  * Стандарните Erlang механизми: epmd, .hosts.erlang
+  * Multicast UDP gossip протокол
+  * Чрез използване на Kubernetes API и конфигуриране на етитек (label)
+  * Чрез Rancher
+
+---
 ### Проверка дали node е в мрежата
 
 ```elixir
