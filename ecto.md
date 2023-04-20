@@ -366,4 +366,124 @@ Indexes:
 * За повече информация [тук](https://hexdocs.pm/ecto_sql/Ecto.Migration.html)
 
 ---
-### Ecto и заявки
+## Ecto и заявки
+
+* Можем да използваме Ecto DSL да пишем всякакви заявки към базата.
+* Няма защо да дефинираме RM (relational mapping) за да правим заявки от `Repo`.
+* Такива заявки наричаме *schemaless* - не сме дефинирали схема в Elixir но ги правим.
+
+---
+### Ecto и заявки : insert_all
+
+- Този тип заявки могат да запишат в базата един или много редове:
+
+```elixir
+  def insert_book!(isbn, title, description, author_name, year, language) do
+    {1, [%{id: id}]} =
+      Repo.insert_all(
+        "books",
+        [
+          [
+            isbn: isbn,
+            title: title,
+            description: description,
+            author_name: author_name,
+            year: year,
+            language: language,
+            inserted_at: DateTime.utc_now(),
+            updated_at: DateTime.utc_now()
+          ]
+        ],
+        returning: [:id]
+      )
+
+    id
+  end
+```
+
+---
+### Ecto и заявки : all
+
+- С `Repo.all` можем да правим `SELECT` заявки:
+
+```elixir
+  def books_by_year(year) do
+    query =
+      from("books",
+        where: [year: ^year],
+        select: [:title, :author_name]
+      )
+
+    Repo.all(query)
+  end
+```
+
+---
+### Ecto и заявки : all
+
+- `Repo.all` също така поддържа всичко. нужно на `SELECТ`, като `group_by`, `limit`, `join` и други:
+
+```elixir
+  def books_by_years_or_authors(years, authors) do
+    query =
+      from(b in "books",
+        where: b.year in ^years or b.author_name in ^authors,
+        select: [:id, :isbn, :title, :author_name, :year, :description]
+      )
+
+    Repo.all(query)
+  end
+```
+
+---
+### Ecto и заявки : one
+
+- Функцията `Repo.one` се ползва ако задължително очакваме един резултат максимално:
+
+```elixir
+  def book_by_id(id) do
+    query =
+      from("books",
+        where: [id: ^id],
+        select: [:id, :title, :author_name, :year]
+      )
+
+    Repo.one(query)
+  end
+```
+
+---
+### Ecto и заявки : update_all
+
+- Можем да използваме цялата сила на езика за заявки за да направим `UPDATE`:
+
+```elixir
+  def update_book_description!(book_id, description) do
+    query = from(b in "books", where: b.id == ^book_id)
+
+    {1, _} = Repo.update_all(query, set: [description: description])
+  end
+```
+
+---
+### Ecto и заявки : delete_all
+
+- Това се отнася и за `DELETE`:
+
+```elixir
+  def delete_book_by_isbn!(isbn) do
+    query = from(b in "books", where: b.isbn == ^isbn)
+
+    {1, _} = Repo.delete_all(query)
+  end
+```
+
+---
+## Ecto схеми
+
+* Можем да използваме Ecto само като *query builder*.
+* Но можем да изберем и да опишем схемата си със структури.
+* Така получаваме няколко неща:
+  * Описание и документация на таблиците в кода, както и структурирано представяне, не просто `map`-ове.
+  * Валидация на ниво Elixir код.
+  * Лесен начин на зареждане на свързани редове от други таблици (preload).
