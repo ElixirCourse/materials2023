@@ -487,3 +487,128 @@ Indexes:
   * Описание и документация на таблиците в кода, както и структурирано представяне, не просто `map`-ове.
   * Валидация на ниво Elixir код.
   * Лесен начин на зареждане на свързани редове от други таблици (preload).
+
+---
+## Ecto схеми : с миграции
+
+- Ако си дефинираме миграция за `countries` така:
+
+```elixir
+  def change do
+    create table(:countries) do
+      add :name, :string, size: 32, null: false
+      add :code, :string, size: 2, null: false
+
+      timestamps()
+    end
+
+    create unique_index(:countries, [:name])
+    create unique_index(:countries, [:code])
+  end
+```
+
+---
+## Ecto схеми : с миграции
+
+- Съответната схема би била:
+
+```elixir
+defmodule Books.Country do
+  use Ecto.Schema
+
+  import Ecto.Changeset
+
+  schema "countries" do
+    field(:name, :string)
+    field(:code, :string)
+
+    timestamps()
+  end
+end
+```
+
+
+---
+## Ecto схеми : с миграции
+
+* Схемата съответства на миграцията и дефинира Elixir структура.
+* Вече е възможно да създадем `%Books.Country{name: "Bulgaria", code: "BG"}` и тази структура би могла да се запази като ред в базата.
+* Схемата може да се ползва и за създаване на *changeset*.
+
+---
+## Ecto changeset
+
+* Използват се за да трансформират (`cast`) неструктурирани данни (`map`), в нещо структурирано, като ни осигуряват валидни и сигурни данни.
+* Могат да се ползват и за промени, като *diff*. Като промяната е от валидни данни до нови, отново валидни данни.
+* Данните са винаги консистентни, защото ние сами си описваме правилата за валидация.
+* Валидацията води до `changeset`, който е или валиден или не. Ако не е валиден съдържа структурирани грешки във формат, който очакваме.
+
+---
+## Ecto changeset
+
+- Пример за `changeset` за схемата `Country`:
+
+```elixir
+  def changeset(%__MODULE__{} = country, attrs) do
+    country
+    |> cast(attrs, [:name, :code])
+    |> validate_required([:name, :code])
+    |> validate_length(:code, min: 2, max: 2)
+    |> validate_length(:name, min: 4, max: 64)
+    |> unique_constraint(:code)
+    |> unique_constraint(:name)
+    |> validate_code()
+    |> validate_name()
+  end
+```
+
+---
+## Ecto changeset
+
+* Функциите за валидация идват от `Ecto.Changeset`, можем да си ги `import`-нем.
+* Функцията `cast/3` създава `changeset` от позната структура, неструктурирани атрибути и полета, които да извлечем от тези атрибути.
+* Само зададените полета попадат в `changeset`-a.
+
+---
+## Ecto changeset
+
+* С функцията `validate_required/2` си осигуряваме, че задължителните полета съществуват.
+* С функцията `validate_length/3` валидираме дължините на низовете.
+* С функцията `unique_constraint/2` си осигуряваме, че вече няма такива стойности в базата данни.
+* Можем да си пишем и наша си валидация, използвайки структурата и свойствата на `changeset`.
+
+---
+## Ecto changeset
+
+- Пример за специфична валидация:
+
+```elixir
+  defp validate_code(%Ecto.Changeset{valid?: false} = changeset), do: changeset
+
+  defp validate_code(changeset) do
+    code = get_field(changeset, :code)
+
+    if code != String.upcase(code) do
+      add_error(changeset, :code, "Country code has to be in uppercase!")
+    else
+      changeset
+    end
+  end
+```
+
+---
+## Ecto changeset и бази данни
+
+- Невалиден `changeset` не може да се запази в базата, даже няма да има заявка:
+
+```elixir
+changeset = Country.changeset(%Country{}, %{name: "Bulgaria", code: "bg"})
+
+{:error, changeset} = Repo.insert(changeset)
+
+changeset.valid?
+#=> false
+
+changeset.errors
+#=> [code: {"Country code has to be in uppercase!", []}]
+```
