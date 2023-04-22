@@ -919,3 +919,116 @@ end
 * Най-простият начин е просто код, съдържащ заявки да е подаден като функция, която да се изпълни в транзакция.
 * Поддържа се и динамично построяване на транзакции (`Ecto.Multi`).
 * Чрез `Ecto.Multi` можем да си строим и *batch* insert-и към базата данни.
+
+---
+## Ecto транзакции
+
+- Примерна транзакция за запис на книга:
+
+```elixir
+  {:ok, book_id} =
+    Books.Repo.transaction(fn ->
+      {:ok, %{id: country_id}} = Books.insert_or_get_country("USA", "US")
+
+      {:ok, %{id: author_id}} =
+        Books.insert_or_get_author(
+          "Дан",
+          "Симънс",
+          Date.from_iso8601!("1948-04-04"),
+          country_id
+        )
+
+      book_id = Books.insert_book!("978-619-152-344-3", "Ужас", @desc, 2013, "български")
+      :ok = Books.add_authors_to_book(book_id, [author_id])
+
+      book_id
+    end)
+```
+
+---
+### Ecto транзакции
+
+* Ако някъде из кода има грешка (`raise`) транзакцията ще се *rollback*-не.
+* Ако извикаме `Book.Repo.rollback(:some_error)`, транзакцията ще се *rollback*-не.
+* Ако няма грешки транзакцията ще мине и ще върне като резултат резултатът от функцията.
+* Ако транзакцията не мине, ще върне `{:error, <some_error>}`.
+
+---
+### Ecto транзакции
+
+```elixir
+  {:ok, %{book_id: book_id}} =
+    Multi.new()
+    |> Multi.run(:country, fn _repo, _current_state ->
+      {:ok, %Books.Country{}} = Books.insert_or_get_country("USA", "US")
+    end)
+    |> Multi.run(:author, fn _repo, %{country: %{id: country_id}} ->
+      {:ok, %{id: author_id}} =
+        Books.insert_or_get_author(
+          "Дан",
+          "Симънс",
+          Date.from_iso8601!("1948-04-04"),
+          country_id
+        )
+    end)
+    |> Multi.run(:book_id, fn _repo, _current_state ->
+      {:ok, Books.insert_book!("978-619-152-344-3", "Ужас", @desc, 2013, "български")}
+    end)
+    |> Multi.run(:authors_books, fn _repo, %{book_id: book_id, author: %{id: author_id}} ->
+      case Books.add_authors_to_book(book_id, [author_id]) do
+        :ok ->
+          {:ok, nil}
+
+        error ->
+          error
+      end
+    end)
+    |> Books.Repo.transaction()
+```
+
+---
+### Ecto транзакции
+
+* Ако някъде из кода има грешка (`raise`) транзакцията ще се *rollback*-не.
+* Ако извикаме `Book.Repo.rollback(:some_error)`, транзакцията ще се *rollback*-не.
+* Ако някоя стъпка върне `{:error, <some_error>}`,  транзакцията ще се *rollback*-не.
+* Ако няма грешки транзакцията ще мине и ще върне като резултат map в който за името на всяка стъпка имаме резултата ѝ.
+* Ако транзакцията не мине, ще върне `{:error, <стъпка>, changeset, current_state}`.
+
+---
+### Ecto транзакции
+
+* `Ecto.Multi` има няколко функции, да речем за insert и update, но `run` е най-изразителната.
+* Идеята е декларативно и динамично да си построим транзакцията.
+* Трябва да се внимава да не се разхвърля кода из много функции и да стане труден за проследяване и четене.
+* Може да се ползва с `Enum.reduce` за построяване на `batch insert` в транзакция например.
+
+---
+### Ecto транзакции
+
+- Пример за `Ecto.Multi` и операции в транзакция, базирани на списък:
+
+```elixir
+  def add_authors_to_book(book_id, author_ids) do
+    steps =
+      Enum.reduce(author_ids, Ecto.Multi.new(), fn author_id, steps ->
+        name = "step_#{book_id}_#{author_id}"
+        Ecto.Multi.insert(steps, name, %AuthorBook{book_id: book_id, author_id: author_id})
+      end)
+
+    case Repo.transaction(steps) do
+      {:ok, _} ->
+        :ok
+
+      {:error, _, changeset, _changes_so_far} ->
+        {:error, changeset}
+    end
+  end
+```
+
+---
+## Тестване с Ecto
+
+* За да тестваме код свързан с база от данни трябва да си осигуриме празна база данни за всеки тест.
+* Така няма да има изненади в резултатите, които очакваме.
+* Ecto идва със специален *sandbox* за тестване, който ни осигурява това.
