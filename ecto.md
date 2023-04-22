@@ -556,7 +556,7 @@ end
 * Валидацията води до `changeset`, който е или валиден или не. Ако не е валиден съдържа структурирани грешки във формат, който очакваме.
 
 ---
-## Ecto changeset
+### Ecto changeset
 
 - Пример за `changeset` за схемата `Country`:
 
@@ -575,14 +575,14 @@ end
 ```
 
 ---
-## Ecto changeset
+### Ecto changeset
 
 * Функциите за валидация идват от `Ecto.Changeset`, можем да си ги `import`-нем.
 * Функцията `cast/3` създава `changeset` от позната структура, неструктурирани атрибути и полета, които да извлечем от тези атрибути.
 * Само зададените полета попадат в `changeset`-a.
 
 ---
-## Ecto changeset
+### Ecto changeset
 
 * С функцията `validate_required/2` си осигуряваме, че задължителните полета съществуват.
 * С функцията `validate_length/3` валидираме дължините на низовете.
@@ -590,7 +590,7 @@ end
 * Можем да си пишем и наша си валидация, използвайки структурата и свойствата на `changeset`.
 
 ---
-## Ecto changeset
+### Ecto changeset
 
 - Пример за специфична валидация:
 
@@ -609,7 +609,7 @@ end
 ```
 
 ---
-## Ecto changeset и бази данни
+### Ecto changeset и бази данни
 
 - Невалиден `changeset` не може да се запази в базата, даже няма да има заявка:
 
@@ -624,3 +624,298 @@ changeset.valid?
 changeset.errors
 #=> [code: {"Country code has to be in uppercase!", []}]
 ```
+
+---
+## Ecto асоциации
+
+* В релационните бази от данни има релации между таблиците.
+* Ecto, в ролята си на *mapper* поддържа представяне на тези релации като асоциации.
+* Схемите, които са реферирани имат `has_one` или `has_many` асоциации.
+* Схемите, които реферират използват `belongs_to` за да изразят това.
+
+---
+## Ecto асоциации
+
+- Нека имаме миграцията:
+
+```elixir
+  def change do
+    create table(:authors) do
+      add :first_name, :string, size: 32, null: false
+      add :last_name,  :string, size: 32, null: false
+      add :birth_date, :date
+      add :country_id, references(:countries), null: false
+
+      timestamps()
+    end
+
+    create index(:authors, [:first_name, :last_name])
+  end
+```
+
+---
+### Ecto асоциации
+
+* Декларираме, че таблицата `authors` има *FK* (foreign key) `country_id`.
+* `references` приема таблицата, която се реферира и опции като какво да стане при триене или промяна на зависимостта.
+
+---
+### Ecto асоциации
+
+- Схемата `Author` представлява:
+
+```elixir
+  schema "authors" do
+    field(:first_name, :string)
+    field(:last_name, :string)
+    field(:birth_date, :date)
+
+    field(:name, :string, virtual: true)
+
+    belongs_to(:country, Books.Country)
+
+    timestamps()
+  end
+```
+
+---
+### Ecto асоциации : *belongs_to*
+
+* С `belongs_to` изразяваме, че таблицата на схемата реферира друга таблица с *FK*.
+* Има множоство от опции. Пример е, че ако реферираната схема се казва `Country`, то автоматично се ползва `country_id`.
+* Ако *FK* се казваше `the_country_id` нямаше да стане. Бихме дефинирари `belongs_to(:country, Books.Country, foreign_key: :the_country_id)`.
+* Вижте документацията за всички опции.
+
+---
+### Ecto асоциации
+
+- Схемата `Country` се променя на:
+
+```elixir
+  schema "countries" do
+    field(:name, :string)
+    field(:code, :string)
+
+    has_many :authors, Books.Author
+
+    timestamps()
+  end
+```
+
+---
+### Ecto асоциации : *has_many*/*has_one*
+
+* С `has_many`/`has_one` изразяваме, че таблицата на схемата е реферирана от друга таблица с *FK*.
+* Поддържа подобни опции на *belongs_to*, филтри, име на *FK* и други.
+* Можем да изразим *many-to-many* връзка с междинна таблица, като използваме `through: [<междинна-асоциация>, <асоциация>]` от двете страни на релацията.
+
+---
+### Ecto асоциации : *many_to_many*
+
+- За many_to_many релацията има по добър начин за изразяване:
+
+```elixir
+  def change do
+    create table(:authors_books) do
+      add :author_id, references(:authors), null: false
+      add :book_id, references(:books), null: false
+    end
+  end
+
+# Books.Book:
+  many_to_many :authors, Author, join_through: "authors_books"
+
+# Books.Author:
+  many_to_many :books, Book, join_through: "authors_books"
+```
+
+---
+### Ecto асоциации и changesets
+
+- Можем просто да задаваме id-тата на асоцияциите:
+
+```elixir
+  def changeset(%__MODULE__{} = author, %{country_id: _} = attrs) do
+    author
+    |> cast(attrs, [:first_name, :last_name, :birth_date, :country_id])
+    |> validate_required([:first_name, :last_name, :country_id])
+    |> foreign_key_constraint(:country_id)
+    |> validate()
+  end
+
+  defp validate(changeset) do
+    changeset
+    |> validate_length(:first_name, min: 1, max: 32)
+    |> validate_length(:last_name, min: 1, max: 32)
+  end
+```
+
+---
+### Ecto асоциации и changesets
+
+- Можем и да задаваме целите асоциации:
+
+```elixir
+  def changeset(%__MODULE__{} = author, %{country: country} = attrs) do
+    author
+    |> cast(attrs, [:first_name, :last_name, :birth_date])
+    |> validate_required([:first_name, :last_name])
+    |> check_country(country)
+    |> validate()
+  end
+```
+
+---
+### Ecto асоциации и changesets
+
+- Важното е да проверим дали асоциацията вече съществува ако има *unique constraint*:
+
+```elixir
+  defp check_country(%{valid?: false} = changeset, _), do: changeset
+
+  defp check_country(changeset, country) do
+    country_changeset = Country.changeset(%Country{}, country)
+
+    if country_changeset.valid? do
+      put_country(Repo.get_by(Country, name: get_field(country_changeset, :name)), changeset)
+    else
+      changeset
+    end
+  end
+```
+
+---
+### Ecto асоциации и changesets
+
+- След, което да я запишем или само маркираме:
+
+```elixir
+  defp put_country(nil, changeset) do
+    cast_assoc(changeset, :country, required: true, with: &Books.Country.changeset/2)
+  end
+
+  defp put_country(country, changeset) do
+    put_assoc(changeset, :country, country)
+  end
+```
+
+---
+### Ecto асоциации и changesets
+
+* При `many_to_many` подобно нещо става още по-сложно.
+* Затова записване на асоциации по id-та винаги е най-лесният и по-SQL вариант.
+* Когато *relational mapping*-ът започне да създава твърде много работа, просто опростете нещата, като използвате по-близък до базата код.
+
+---
+### Ecto асоциации и заявки
+
+- По подразбиране асоциацията не се зарежда при `SELECT`:
+
+```elixir
+%Books.Author{
+  id: 68,
+  first_name: "Иван",
+  last_name: "Александров",
+  birth_date: ~D[1996-05-13],
+  name: nil,
+  country_id: 66,
+  country: #Ecto.Association.NotLoaded<association :country is not loaded>,
+  books: #Ecto.Association.NotLoaded<association :books is not loaded>,
+  ...
+}
+```
+
+---
+### Ecto асоциации и заявки
+
+- Можем да зарадем асоциациите си с `preload`:
+
+```elixir
+  author = Books.Repo.preload(author, :country)
+
+  %Country{name: "Bulgaria", code: "BG", id: ^country_id} = author.country
+```
+
+---
+### Ecto асоциации и заявки
+
+- Можем да задаваме preload и в заявки, елиминирайки *N+1* проблема:
+
+```elixir
+  def by_country_name(country_name) do
+    query = from(
+      a in __MODULE__,
+      join: c in Country,
+      on: a.country_id == c.id,
+      where: c.name == ^country_name,
+      preload: [:country]
+    )
+
+    query = from(a in query, select_merge: %{name: fragment("? || ' ' || ?", a.first_name, a.last_name)})
+
+    Repo.all(query)
+  end
+```
+
+---
+### Повече за Ecto заявки
+
+* Можем динамично да си строим завики като от строим заявка от заявка `from q in query`.
+* Можем да го правим и с `Ecto.query.where`, `Ecto.query.group_by` и тн.
+* Можем да си дефинираме виртуални полета и да ги запълваме с `select_merge`.
+* Когато искаме да направим нещо по специфично за базата, за което нямаме изразно средство в Ecto, можем да ползваме `fragment`.
+
+
+---
+## Ecto changeset без schema
+
+* Можем да използваме `changeset` без схема.
+* Така можем да си напишем валидация за JSON или за каквито и да е map-ове.
+* Можем и да ползваме `changeset` със `schema`, но без база данни и таблица, да речем за валидация на по-структурирани данни без модел в базата.
+
+---
+## Ecto changeset без schema
+
+```elixir
+data = %{}
+types = %{name: :string, email: :string}
+
+changeset =
+  {data, types}
+  |> Ecto.Changeset.cast(params["sign_up"], Map.keys(types))
+  |> validate_required(...)
+  |> validate_length(...)
+
+```
+
+---
+## Ecto changeset с embedded_schema
+
+- Със схема, но без таблица свързана с нея:
+
+```elixir
+defmodule SignUp do
+  @mail_regex ~r/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/
+
+  embedded_schema do
+    field(:name, :string)
+    field(:email, :string)
+  end
+
+  def changeset(sign_up, attrs \\ %{}) do
+    sign_up
+    |> cast(attrs, [:name, :email])
+    |> validate_required([:name, :email])
+    |> validate_length(:name, min: 4, max: 64)
+    |> validate_format(field, @mail_regex)
+  end
+end
+```
+
+---
+## Ecto транзакции
+
+* Ecto поддържа работа с транзакции по няколко начина.
+* Най-простият начин е просто код, съдържащ заявки да е подаден като функция, която да се изпълни в транзакция.
+* Поддържа се и динамично построяване на транзакции (`Ecto.Multi`).
+* Чрез `Ecto.Multi` можем да си строим и *batch* insert-и към базата данни.
