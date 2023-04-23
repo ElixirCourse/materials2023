@@ -1032,3 +1032,143 @@ end
 * За да тестваме код свързан с база от данни трябва да си осигуриме празна база данни за всеки тест.
 * Така няма да има изненади в резултатите, които очакваме.
 * Ecto идва със специален *sandbox* за тестване, който ни осигурява това.
+
+---
+## Тестване с Ecto
+
+- Първо се нуждаем от конфигурация за тестване (*config/test.exs*).
+- Важно е да сложим за *pool* `Ecto.Adapters.SQL.Sandbox`, така базата ще бъде чистена на всеки тест:
+
+```elixir
+import Config
+
+config :books, Books.Repo,
+  pool: Ecto.Adapters.SQL.Sandbox,
+  database: "books_test",
+  username: "booker",
+  password: "bookerpass",
+  hostname: "localhost"
+```
+
+---
+### Тестване с Ecto
+
+- В *test/test_helper.exs* дефинираме mode-ът на `Sandbox`:
+
+```elixir
+ExUnit.start()
+
+Ecto.Adapters.SQL.Sandbox.mode(Books.Repo, :manual)
+```
+
+---
+### Тестване с Ecto
+
+* С `:manual` mode, ще трябва преди всеки тест да си *checkout*-не connection към базата ръчно.
+* Един такъв *connection* винаги се изпълнява в траназакция, която след теста се *rollback*-ва.
+* Поддържат се `{:shared, <pid>>}` и `:auto` mode-ове. Ако искаме няколко процеса да ползват същия connection ползваме `shared` например.
+
+---
+### Тестване с Ecto
+
+- Сега можем да си напишем `Books.RepoCase`:
+
+```elixir
+# In test/support/repo_case.ex
+
+defmodule Books.RepoCase do
+  use ExUnit.CaseTemplate
+
+  using do
+    quote do
+      alias Books.Repo
+
+      import Ecto
+      import Ecto.Query
+      import Books.RepoCase
+    end
+  end
+
+  setup tags do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Books.Repo)
+
+    unless tags[:async] do
+      Ecto.Adapters.SQL.Sandbox.mode(Books.Repo, {:shared, self()})
+    end
+
+    :ok
+  end
+end
+```
+
+---
+### Тестване с Ecto
+
+* Така ако сме в `:async` mode всеки тест ще си има собствен connection, със собствен *DB transaction*.
+* Това позволява да имаме конкурентни тестове към базата.
+* Postgrex driver-ът позволява това, други driver-и не го позволяват и затова трябва да се провери за даден driver дали се поддържа.
+* Ако `:async` е `false`, сме в `:shared` mode, което значи, че всеки процес, който текущият тест пусне ще ползва същия connection.
+* Повече прочетете [тук](https://hexdocs.pm/ecto_sql/Ecto.Adapters.SQL.Sandbox.html)
+
+---
+### Тестване с Ecto
+
+- За да се компилира `RepoCase` ще трябва да променим *mix.exs*:
+
+```elixir
+  def project do
+    [
+      app: :books,
+      version: "0.1.0",
+      elixir: "~> 1.14",
+      start_permanent: Mix.env() == :prod,
+      elixirc_paths: elixirc_paths(Mix.env()),
+      aliases: aliases(),
+      deps: deps()
+    ]
+  end
+```
+
+---
+### Тестване с Ecto
+
+- За да се компилира `RepoCase` ще трябва да променим *mix.exs*:
+
+```elixir
+  defp aliases do
+    [
+      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+    ]
+  end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
+```
+
+---
+### Тестване с Ecto
+
+- Сега можем да си дефинираме DB тестове:
+
+```elixir
+defmodule BooksTest do
+  use Books.RepoCase
+
+  test "schemaless queries" do
+    insert_test_books!()
+
+    books = Books.books_by_year(2013)
+    assert books == []
+
+    #...
+  end
+end
+```
+
+---
+## Край
+
+- Можете да пробвате и други адаптери [Etso : Ecto+ETS](https://github.com/evadne/etso) е интересен.
+- Можете да имате multi-tenant система с [префикси по схема](https://hexdocs.pm/ecto/multi-tenancy-with-query-prefixes.html).
+- Можете да имплементирате multi-tenancy и с [FK](https://hexdocs.pm/ecto/multi-tenancy-with-foreign-keys.html).
+- Има още много интересни теми и функционалности край Ecto, DBConnection, драйверите. Има и [книга](https://pragprog.com/titles/wmecto/programming-ecto).
