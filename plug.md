@@ -67,6 +67,17 @@ marp: true
 
 ---
 
+### Web Stack
+
+* TCP/IP
+* Sockets
+* HTTP
+* Plug
+* Phoenix
+* Phoenix LiveView
+
+---
+
 ### IP (Internet Protocol)
 
 * Протокол за изпращане на datagrams (header-payload структури) в мрежата.
@@ -77,6 +88,14 @@ marp: true
   * Изпращате данни към адрес 35.129.109.24 без да се интересувате какъв е маршрутът до този адрес.
 * IPv4 (32 бита) и IPv6 (128 бита) версии.
 * **Никога** не го имплементирате вие.
+
+---
+
+### IP (Internet Protocol)
+
+* Всеки хост в мрежата има IP адрес.
+* Да си свързан с мрежата означава да имаш IP адрес и да можеш да достигаш до други хостове чрез техния IP адрес.
+* Единственото нещо, което IP прави, е да доставя datagrams на някой хост.
 
 ---
 
@@ -123,35 +142,6 @@ traceroute to elixir-lang.bg (165.227.142.119), 64 hops max, 72 byte packets
 
 ---
 
-### DNS  (Domain Name System)
-
-* Не е протокол.
-* Дистрибутирана и йерархична система за имена.
-* Отговаря на въпроси като "Какъв е IP адресът на google.com?"
-* Използва `UDP` и/или `TCP` за комуникация.
-* Може да използва допълнителни протоколи, ако има нужда от сигурност.
-* Запазен порт 53.
-
----
-
-```bash
-➜  ~ dig elixir-lang.bg
-# ...
-;; ANSWER SECTION:
-elixir-lang.bg.		1527	IN	A	165.227.142.119
-# ...
-
-➜  ~ nslookup elixir-lang.bg
-\Server:        192.168.100.1
-Address:        192.168.100.1#53
-
-Non-authoritative answer:
-Name:   elixir-lang.bg
-Address: 165.227.142.119
-```
-
----
-
 ### Port
 
 * Elixir Port != Networking Port.
@@ -192,7 +182,7 @@ Address: 165.227.142.119
 
 ---
 
-### Кой ми слуша на порта - решение
+### Кой слуша на порт - решение
 
 ```sh
 ~ lsof -nP -i4TCP:4000 | grep LISTEN
@@ -244,6 +234,7 @@ beam.smp 7698 ivan   37u  IPv4 0xb09ace71891ae715      0t0  TCP 127.0.0.1:4000 (
 
 * Транспортен протокол. (Почти винаги) използва IP за преноса на данните.
 * Connection-based. Една връзка се определя от четворката `(source ip, source port, destination ip, destination port)`.
+* Позволява да се адресират отделни процеси на сървъра.
 * Добавя функционалност за:
   * **Connection** - Чрез handshake процес се установява постоянна връзка.
   * **Наредба** - Голямо съобщение може да се разбие в много IP пакети, които могат да бъат получени в разбъркан ред. TCP ги подрежда в правилния ред.
@@ -252,9 +243,32 @@ beam.smp 7698 ivan   37u  IPv4 0xb09ace71891ae715      0t0  TCP 127.0.0.1:4000 (
 
 ---
 
-### QUIC (произнася се както quick)
+### DNS  (Domain Name System)
 
-* Нещо по-ново ново.
+* Не е протокол.
+* Дистрибутирана и йерархична система за имена.
+* Отговаря на въпроси като "Какъв е IP адресът на google.com?"
+* Използва `UDP` и/или `TCP` за комуникация.
+* Може да използва допълнителни протоколи, ако има нужда от сигурност.
+* Запазен порт 53.
+
+---
+
+```bash
+➜  ~ dig elixir-lang.bg
+# ...
+;; ANSWER SECTION:
+elixir-lang.bg.		1527	IN	A	165.227.142.119
+# ...
+
+➜  ~ nslookup elixir-lang.bg
+\Server:        192.168.100.1
+Address:        192.168.100.1#53
+
+Non-authoritative answer:
+Name:   elixir-lang.bg
+Address: 165.227.142.119
+```
 
 ---
 
@@ -328,6 +342,32 @@ Bye
 Bye
 ```
 
+---
+
+### Socket Server
+
+* Не е приятно да се пише ръчно accept/listen/bind/send/recv/etc.
+* Решение: Socker server/TCP acceptor pool библиотеки
+* [Ranch](https://github.com/ninenines/ranch)
+* [Thousand Island](https://github.com/mtrudel/thousand_island)
+
+---
+
+```elixir
+Mix.install [:thousand_island]
+
+defmodule Echo do
+  use ThousandIsland.Handler
+
+  @impl ThousandIsland.Handler
+  def handle_data(data, socket, state) do
+    ThousandIsland.Socket.send(socket, data)
+    {:continue, state}
+  end
+end
+
+{:ok, pid} = ThousandIsland.start_link(port: 1234, handler_module: Echo)
+```
 ---
 
 ### HTTP (Hypertext Transfer Protocol)
@@ -793,6 +833,23 @@ defmodule MyPlugTest do
     assert conn.state == :sent
     assert conn.status == 200
     assert conn.resp_body == "world"
+  end
+end
+```
+
+---
+
+```elixir
+defmodule MyRouterTest do
+  use ExUnit.Case, async: true
+  use Plug.Test
+
+  @opts MyRouter.init([])
+
+  test "returns hello text" do
+    response = conn(:get, "/") |> MyRouter.call([])
+    assert response.body == "hello"
+    assert response.status == 200
   end
 end
 ```
