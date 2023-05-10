@@ -460,6 +460,92 @@ end
 
 ---
 
+
+---
+
+### Sigils
+
+* Механизъм за представяне на данни чрез тяхната текстова репрезентация.
+* `~D[2023-05-05]` вместо `Date.new(2023, 5, 5)`
+* `~r/foo|bar/` вместо `Regex.compile!("foo|bar")`
+* Това позволява добавянето на функционалност чрез библиотека, а не чрез разширяване на синтаксиса на езика.
+  * Синтаксис: `%{}`, `{}`, `[]`, etc.
+  * Сигил: `~r/foo/`, `~D[2023-05-15]` и т.н.
+* До Elixir 1.14 името на сигилите е една буква: `~s`, `~r`, `~U`, `~D` и т.н.
+* От Elixir 1.15 името на сигилите може да е повече от една буква, но е задължително всички букви да са главни.
+  * За да се избегнат неясноти: `var=~opts[bar]` vs `var =~ opts[bar]` vs `var = ~opts[bar]`
+  * Очаква се да добавят `~PID`, `~PORT` и други подобни сигили.
+
+---
+
+```elixir
+defmacro sigil_D({:<<>>, _, [string]}, []) do
+  {{:ok, {year, month, day}}, calendar} = parse_with_calendar!(string, :parse_date, "Date")
+  to_calendar_struct(Date, calendar: calendar, year: year, month: month, day: day)
+end
+
+defmacro sigil_r({:<<>>, _meta, [string]}, options) when is_binary(string) do
+  binary = :elixir_interpolation.unescape_string(string, &Regex.unescape_map/1)
+  regex = Regex.compile!(binary, :binary.list_to_bin(options))
+  Macro.escape(regex)
+end
+
+defmacro sigil_r({:<<>>, meta, pieces}, options) do
+  binary = {:<<>>, meta, unescape_tokens(pieces, &Regex.unescape_map/1)}
+  quote(do: Regex.compile!(unquote(binary), unquote(:binary.list_to_bin(options))))
+end
+```
+
+---
+
+### Verified Routes sigil ~p
+
+* Когато правим линк към някой път в нашето приложение, може да използваме просто стрингове: `"/users/#{user.id}"`
+* Но в този случай, ако допуснем грешка, няма да разберем веднага, а чак по време на изпълнение.
+* Искаме по време на компилация да получим грешка, ако сме използвали невалиден път като `/user/#{user.id}`
+* Преди Phoenix 1.7 използваме функция, която генерира път: `Routes.user_path(conn, :show, user)`
+
+---
+
+### Verified Routes sigil ~p
+
+* От Phoenix 1.7 използваме `~p` сигил: `~p"/users/#{user.id}`, който е много по-прост за употреба, но 
+  * В `~p` сигила интерполацията работи по по-различен начин.
+  * Можем да напишем просто `~p"/users/user"` ако `user` има поле `:id`
+  * Когато генерираме query параметри, може да интерполираме речник, вместо да използваме `URI.encode_query/2`.
+* [Verified Routes имплементация](https://github.com/phoenixframework/phoenix/blob/main/lib/phoenix/verified_routes.ex)
+
+---
+
+### HEEX (HTML+EEx) Sigil ~H
+
+* Когато трябва да пишем HTML, използваме `~H` сигил
+* `~H"<span class={[@name, @class]} />"`
+* Низовете в този сигил минават през HTML валидация.
+  * Преди въвеждането на `~H`, ако във вашия HTML код има грешка, липсващ затварящ таг и т.н., ще разберете доста по-късно.
+* Низовете в този сигил се форматират чрез специален плъгин на Elixir Formatter
+  * `plugins: [Phoenix.LiveView.HTMLFormatter]`
+  * Форматира HTML кода, т.е. форматира вътрешността на низ.
+* Може да embed-вате Elixir код чрез `<%= <elixir code> %>` и `<% <elixir code> %>`
+* Ако искате да embed-вате Elixir в HTML таг: `<div id={@id}>`
+
+---
+
+```elixir
+~H"""
+<.form :let={f} for={@for} as={@as} {@rest}>
+  <div class="mt-10 space-y-8 bg-white">
+    <%= render_slot(@inner_block, f) %>
+    <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
+      <%= render_slot(action, f) %>
+    </div>
+  </div>
+</.form>
+"""
+```
+
+---
+
 ### Phoenix.Endpoint
 
 * `Phoenix.Endpoint` е входната точка за всяка заявка. 
@@ -600,90 +686,6 @@ end
 * `mix phx.gen.release --docker` - Генерира нужните файлове за създаване на Mix Release, както и Dockerfile.
   * `mix phx.gen.secret` - Генерира случаен низ с достатъчна ентропия, за да може да бъде използван като secret.
 * И други.
-
-
----
-
-### Sigils
-
-* Механизъм за представяне на данни чрез тяхната текстова репрезентация.
-* `~D[2023-05-05]` вместо `Date.new(2023, 5, 5)`
-* `~r/foo|bar/` вместо `Regex.compile!("foo|bar")`
-* Това позволява добавянето на функционалност чрез библиотека, а не чрез разширяване на синтаксиса на езика.
-  * Синтаксис: `%{}`, `{}`, `[]`, etc.
-  * Сигил: `~r/foo/`, `~D[2023-05-15]` и т.н.
-* До Elixir 1.14 името на сигилите е една буква: `~s`, `~r`, `~U`, `~D` и т.н.
-* От Elixir 1.15 името на сигилите може да е повече от една буква, но е задължително всички букви да са главни.
-  * За да се избегнат неясноти: `var=~opts[bar]` vs `var =~ opts[bar]` vs `var = ~opts[bar]`
-  * Очаква се да добавят `~PID`, `~PORT` и други подобни сигили.
-
----
-
-```elixir
-defmacro sigil_D({:<<>>, _, [string]}, []) do
-  {{:ok, {year, month, day}}, calendar} = parse_with_calendar!(string, :parse_date, "Date")
-  to_calendar_struct(Date, calendar: calendar, year: year, month: month, day: day)
-end
-
-defmacro sigil_r({:<<>>, _meta, [string]}, options) when is_binary(string) do
-  binary = :elixir_interpolation.unescape_string(string, &Regex.unescape_map/1)
-  regex = Regex.compile!(binary, :binary.list_to_bin(options))
-  Macro.escape(regex)
-end
-
-defmacro sigil_r({:<<>>, meta, pieces}, options) do
-  binary = {:<<>>, meta, unescape_tokens(pieces, &Regex.unescape_map/1)}
-  quote(do: Regex.compile!(unquote(binary), unquote(:binary.list_to_bin(options))))
-end
-```
-
----
-
-### Verified Routes sigil ~p
-
-* Когато правим линк към някой път в нашето приложение, може да използваме просто стрингове: `"/users/#{user.id}"`
-* Но в този случай, ако допуснем грешка, няма да разберем веднага, а чак по време на изпълнение.
-* Искаме по време на компилация да получим грешка, ако сме използвали невалиден път като `/user/#{user.id}`
-* Преди Phoenix 1.7 използваме функция, която генерира път: `Routes.user_path(conn, :show, user)`
-
----
-
-### Verified Routes sigil ~p
-
-* От Phoenix 1.7 използваме `~p` сигил: `~p"/users/#{user.id}`, който е много по-прост за употреба, но 
-  * В `~p` сигила интерполацията работи по по-различен начин.
-  * Можем да напишем просто `~p"/users/user"` ако `user` има поле `:id`
-  * Когато генерираме query параметри, може да интерполираме речник, вместо да използваме `URI.encode_query/2`.
-* [Verified Routes имплементация](https://github.com/phoenixframework/phoenix/blob/main/lib/phoenix/verified_routes.ex)
-
----
-
-### HEEX (HTML+EEx) Sigil ~H
-
-* Когато трябва да пишем HTML, използваме `~H` сигил
-* `~H"<span class={[@name, @class]} />"`
-* Низовете в този сигил минават през HTML валидация.
-  * Преди въвеждането на `~H`, ако във вашия HTML код има грешка, липсващ затварящ таг и т.н., ще разберете доста по-късно.
-* Низовете в този сигил се форматират чрез специален плъгин на Elixir Formatter
-  * `plugins: [Phoenix.LiveView.HTMLFormatter]`
-  * Форматира HTML кода, т.е. форматира вътрешността на низ.
-* Може да embed-вате Elixir код чрез `<%= <elixir code> %>` и `<% <elixir code> %>`
-* Ако искате да embed-вате Elixir в HTML таг: `<div id={@id}>`
-
----
-
-```elixir
-~H"""
-<.form :let={f} for={@for} as={@as} {@rest}>
-  <div class="mt-10 space-y-8 bg-white">
-    <%= render_slot(@inner_block, f) %>
-    <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
-      <%= render_slot(action, f) %>
-    </div>
-  </div>
-</.form>
-"""
-```
 
 ---
 
